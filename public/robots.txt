@@ -1,0 +1,14 @@
+# https://www.robotstxt.org/robotstxt.html
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://tornilleria.com/sitemap.xml
+
+# Disallow admin routes
+Disallow: /admin/
+Disallow: /sign-in
+Disallow: /api/
+
+# Crawl-delay (optional, respectful crawling)
+Crawl-delay: 1
