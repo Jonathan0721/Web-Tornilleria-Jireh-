@@ -1,6 +1,7 @@
 import { Resend } from 'resend'
 
-const resend = new Resend(process.env.RESEND_API_KEY)
+// Agregar el fallback 're_dummy_key' evita que 'next build' falle durante la compilación
+export const resend = new Resend(process.env.RESEND_API_KEY || 're_dummy_key_for_build')
 
 export async function sendOrderConfirmationEmail(
   to: string,
