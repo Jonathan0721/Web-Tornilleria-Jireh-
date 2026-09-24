@@ -22,7 +22,7 @@ function checkRateLimit(ip: string): boolean {
   return true
 }
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
   const ip = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
 
@@ -47,8 +47,4 @@ export function middleware(request: NextRequest) {
   }
 
   return NextResponse.next()
-}
-
-export const config = {
-  matcher: ['/admin/:path*']
 }

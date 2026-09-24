@@ -1,9 +1,9 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, Suspense } from 'react'
 import { usePathname, useSearchParams } from 'next/navigation'
 
-export default function GoogleAnalytics() {
+function GoogleAnalyticsInner() {
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const GA_ID = process.env.NEXT_PUBLIC_GA_ID
@@ -37,4 +37,12 @@ export default function GoogleAnalytics() {
   }, [pathname, searchParams, GA_ID])
 
   return null
+}
+
+export default function GoogleAnalytics() {
+  return (
+    <Suspense fallback={null}>
+      <GoogleAnalyticsInner />
+    </Suspense>
+  )
 }

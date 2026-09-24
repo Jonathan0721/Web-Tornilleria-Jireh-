@@ -492,7 +492,7 @@ export function CartPreview() {
                     className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary text-sm font-semibold text-primary-foreground disabled:opacity-50 touch-manipulation select-none"
                   >
                     <ShoppingCart className="size-4" />
-                    {orderLoading ? 'Confirmando...' : 'Confirmar compra (guardar cliente)'}
+                    {orderLoading ? 'Confirmando...' : 'Confirmar pedido (pago contra entrega)'}
                   </button>
                   <button
                     type="button"

@@ -1,27 +1,27 @@
 import { notFound } from 'next/navigation'
 import TornilleriaProductDetail from '@/components/tornilleria-product-detail'
+import { db } from '@/lib/db'
+import { inventario } from '@/lib/db/schema'
+import { eq, or } from 'drizzle-orm'
+
+export const dynamic = 'force-dynamic'
+
+async function getProductById(id: string) {
+  const products = await db.select().from(inventario).where(
+    or(
+      eq(inventario.sku, id),
+      eq(inventario.id, id)
+    )
+  )
+  return products[0]
+}
 
 export default async function ProductPage({ params }: { params: Promise<{ id: string }> }) {
-  // NOTA: Cuando configures la base de datos, descomenta esto y usa datos reales
-  // const product = await getProductById(params.id)
-  // if (!product) notFound()
-  
   const { id } = await params
+  const product = await getProductById(id)
   
-  // Datos temporales de ejemplo
-  const product = {
-    id: id,
-    sku: 'TH-M8-40',
-    nombre: 'Tornillo hexagonal M8 x 40',
-    categoria: 'Tornillos',
-    tipo: 'galvanizado',
-    medidas: 'M8 x 40',
-    descripcion: 'Tornillo hexagonal de alta resistencia para aplicaciones industriales',
-    descripcionDetallada: 'Tornillo hexagonal galvanizado de grado 8.2, diseñado para aplicaciones que requieren alta resistencia a la corrosión y carga. Cumple con normas ISO 4017. Ideal para construcción metálica, maquinaria industrial y estructuras expuestas a ambientes húmedos.\n\nEspecificaciones:\n- Diámetro: M8\n- Longitud: 40mm\n- Material: Acero al carbono\n- Acabado: Galvanizado en caliente\n- Grado: 8.8\n- Norma: ISO 4017\n- Rosca: Métrica fina',
-    imagen: null,
-    precio: '0.18',
-    stock: 248,
-    unidad: 'ud.'
+  if (!product) {
+    notFound()
   }
   
   return <TornilleriaProductDetail product={product} />
