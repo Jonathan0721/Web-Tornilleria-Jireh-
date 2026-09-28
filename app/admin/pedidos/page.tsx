@@ -1,7 +1,7 @@
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { auth } from '@/lib/auth'
-import { getOrders } from '@/app/actions/orders'
+import { getOrders, updateOrderStatus } from '@/app/actions/orders'
 import TornilleriaDashboard from '@/components/tornilleria-dashboard'
 
 export default async function PedidosPage() {
@@ -12,12 +12,14 @@ export default async function PedidosPage() {
 
   const orders = await getOrders()
   const recentOrders = orders.map((order) => ({
-    id: order.numero,
+    id: order.id,
+    number: order.numero,
     client: order.clienteNombre || 'Cliente',
     date: order.createdAt.toLocaleDateString('es-GT'),
     amount: new Intl.NumberFormat('es-GT', { style: 'currency', currency: 'GTQ' }).format(order.total),
     status: order.estado,
+    phone: order.clienteTelefono || '',
   }))
 
-  return <TornilleriaDashboard activeSection="Pedidos" recentOrders={recentOrders} />
+  return <TornilleriaDashboard activeSection="Pedidos" recentOrders={recentOrders} updateOrderStatus={updateOrderStatus} />
 }

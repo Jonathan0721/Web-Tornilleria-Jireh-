@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react'
 import { signOut } from '@/lib/auth-client'
 import { createProduct, updateProduct, deleteProduct } from '@/app/actions/inventory'
+import type { updateOrderStatus as UpdateOrderStatus } from '@/app/actions/orders'
 import { 
   House, ClipboardList, PackageSearch, Box, Users, Settings, 
   Search, Bell, X, Menu, ArrowUpRight, ChevronDown, Plus, Truck,
@@ -28,7 +29,8 @@ const orderStatusLabels: Record<string, string> = {
 
 type InventoryItem = { id: string; name: string; sku: string; category: string; price: string; stock: number; tipo?: string; medidas?: string }
 type DashboardStats = { sales: { value: number; change: string }; orders: { value: number; change: string }; products: { value: number; change: string }; clients: { value: number; change: string } }
-type RecentOrder = { id: string; client: string; date: string; amount: string; status: string }
+type RecentOrder = { id: string; number?: string; client: string; date: string; amount: string; status: string; phone?: string }
+type Client = { id: string; name: string; email: string; phone: string; nit: string; company: string; createdAt: string }
 type LowStockProduct = { name: string; sku: string; stock: number; price: string }
 type PendingOrdersData = { total: number; pending: number; preparing: number }
 
@@ -37,6 +39,8 @@ export function TornilleriaDashboard({
   inventory = [],
   stats,
   recentOrders = [],
+  clients = [],
+  updateOrderStatus,
   lowStockProducts = [],
   pendingOrders,
   activeSection = 'Resumen'
@@ -45,6 +49,8 @@ export function TornilleriaDashboard({
   inventory?: InventoryItem[]
   stats?: DashboardStats
   recentOrders?: RecentOrder[]
+  clients?: Client[]
+  updateOrderStatus?: typeof UpdateOrderStatus
   lowStockProducts?: LowStockProduct[]
   pendingOrders?: PendingOrdersData
   activeSection?: string
@@ -55,6 +61,13 @@ export function TornilleriaDashboard({
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [notificationsOpen, setNotificationsOpen] = useState(false)
   const [tipoFilter, setTipoFilter] = useState('todos')
+  const [orderStatuses, setOrderStatuses] = useState<Record<string, string>>({})
+  const [orderNotices, setOrderNotices] = useState<Record<string, string>>({})
+
+  const whatsappPhone = (phone: string) => {
+    const digits = phone.replace(/\D/g, '').replace(/^0/, '')
+    return digits.startsWith('502') ? digits : `502${digits}`
+  }
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -186,25 +199,69 @@ export function TornilleriaDashboard({
                         <th className="px-6 py-3 font-medium">Pedido</th>
                         <th className="px-6 py-3 font-medium">Cliente</th>
                         <th className="px-6 py-3 font-medium">Importe</th>
-                        <th className="px-6 py-3 font-medium">Estado</th>
+                        <th className="px-6 py-3 font-medium">Estado y contacto</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {recentOrders.length > 0 ? recentOrders.map((order) => (
+                      {recentOrders.length > 0 ? recentOrders.map((order) => {
+                        const currentStatus = orderStatuses[order.id] || order.status
+                        const statusLabel = orderStatusLabels[currentStatus] || currentStatus
+                        const whatsappMessage = `Hola ${order.client}, te actualizamos sobre tu pedido ${order.number || order.id}: ${currentStatus === 'preparando' ? 'ya estamos preparando tu pedido' : currentStatus === 'enviado' ? 'tu pedido ya fue enviado' : `su estado es ${statusLabel.toLowerCase()}`}. - Tornillería Jehová Jireh.`
+                        return (
                         <tr key={order.id} className="border-t border-border">
                           <td className="whitespace-nowrap px-6 py-4 font-medium">
-                            {order.id}
+                            {order.number || order.id}
                             <span className="block text-xs font-normal text-muted-foreground">{order.date}</span>
                           </td>
                           <td className="whitespace-nowrap px-6 py-4 text-muted-foreground">{order.client}</td>
                           <td className="whitespace-nowrap px-6 py-4 font-medium">{order.amount}</td>
-                          <td className="whitespace-nowrap px-6 py-4">
-                            <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${order.status === 'entregado' ? 'bg-secondary text-foreground' : 'bg-accent text-accent-foreground'}`}>
-                              {orderStatusLabels[order.status] || order.status}
-                            </span>
+                          <td className="min-w-64 px-6 py-4">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <select
+                                aria-label={`Estado de ${order.id}`}
+                                value={currentStatus}
+                                disabled={!updateOrderStatus || isPending}
+                                onChange={(event) => {
+                                  const nextStatus = event.target.value
+                                  startTransition(async () => {
+                                    try {
+                                      const result = await updateOrderStatus?.(order.id, nextStatus)
+                                      setOrderStatuses((current) => ({ ...current, [order.id]: nextStatus }))
+                                      const notice = result?.emailStatus === 'sent'
+                                        ? 'Estado guardado y correo enviado.'
+                                        : result?.emailStatus === 'failed'
+                                          ? 'Estado guardado; falló el correo. Revisa Resend o avisa por WhatsApp.'
+                                          : result?.emailStatus === 'not-configured'
+                                            ? 'Estado guardado; configura un remitente verificado en Resend para enviar correo.'
+                                            : 'Estado guardado. El cliente no tiene correo; puedes avisarle por WhatsApp.'
+                                      setOrderNotices((current) => ({ ...current, [order.id]: notice }))
+                                    } catch {
+                                      setOrderNotices((current) => ({ ...current, [order.id]: 'No se pudo guardar el estado. Intenta de nuevo.' }))
+                                    }
+                                  })
+                                }}
+                                className="min-h-10 rounded-lg border border-input bg-background px-2 text-xs"
+                              >
+                                {Object.entries(orderStatusLabels).map(([value, label]) => (
+                                  <option key={value} value={value}>{label}</option>
+                                ))}
+                              </select>
+                              {order.phone ? (
+                                <a
+                                  href={`https://wa.me/${whatsappPhone(order.phone)}?text=${encodeURIComponent(whatsappMessage)}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex min-h-10 items-center rounded-lg border border-input px-3 text-xs font-medium hover:bg-muted"
+                                >
+                                  Avisar por WhatsApp
+                                </a>
+                              ) : <span className="text-xs text-muted-foreground">Sin teléfono</span>}
+                            </div>
+                            {orderNotices[order.id] ? <p role="status" className="mt-2 text-xs text-muted-foreground">{orderNotices[order.id]}</p> : null}
                           </td>
                         </tr>
-                      )) : (
+                        )
+                      }) : (
                         <tr>
                           <td colSpan={4} className="px-6 py-8 text-center text-muted-foreground">
                             No hay pedidos registrados
@@ -337,8 +394,42 @@ export function TornilleriaDashboard({
             <div className="mb-8">
               <h1 className="text-3xl font-semibold tracking-tight">Clientes</h1>
               <p className="mt-2 text-muted-foreground">Gestiona la información de tus clientes</p>
-              <div className="mt-6 rounded-xl border border-border bg-muted p-8 text-center">
-                <p className="text-muted-foreground">Gestión de clientes disponible cuando configures la base de datos</p>
+              <div className="mt-6 overflow-x-auto rounded-xl border border-border bg-card">
+                <table className="w-full text-left text-sm">
+                  <thead className="bg-muted/50 text-xs text-muted-foreground">
+                    <tr>
+                      <th className="px-5 py-3 font-medium">Cliente</th>
+                      <th className="px-5 py-3 font-medium">Contacto</th>
+                      <th className="px-5 py-3 font-medium">NIT / Empresa</th>
+                      <th className="px-5 py-3 font-medium">Registrado</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {clients.length ? clients.map((client) => (
+                      <tr key={client.id} className="border-t border-border">
+                        <td className="px-5 py-4 font-medium">{client.name}</td>
+                        <td className="px-5 py-4">
+                          <div>{client.email.endsWith('@cliente.local') ? 'Sin correo' : client.email}</div>
+                          <div className="mt-1 text-xs text-muted-foreground">{client.phone || 'Sin teléfono'}</div>
+                          {client.phone ? (
+                            <a
+                              href={`https://wa.me/${whatsappPhone(client.phone)}?text=${encodeURIComponent(`Hola ${client.name}, te contactamos de Tornillería Jehová Jireh.`)}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="mt-2 inline-block text-xs text-primary hover:underline"
+                            >
+                              Contactar por WhatsApp
+                            </a>
+                          ) : null}
+                        </td>
+                        <td className="px-5 py-4 text-muted-foreground">{client.nit || '—'}{client.company ? ` · ${client.company}` : ''}</td>
+                        <td className="whitespace-nowrap px-5 py-4 text-muted-foreground">{client.createdAt}</td>
+                      </tr>
+                    )) : (
+                      <tr><td colSpan={4} className="px-5 py-8 text-center text-muted-foreground">Aún no hay clientes registrados.</td></tr>
+                    )}
+                  </tbody>
+                </table>
               </div>
             </div>
           )}

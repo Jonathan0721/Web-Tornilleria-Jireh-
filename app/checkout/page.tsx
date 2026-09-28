@@ -14,6 +14,7 @@ export default function CheckoutPage() {
   const [mounted, setMounted] = useState(false)
   const [deliveryType, setDeliveryType] = useState<DeliveryType>('delivery')
   const [clientName, setClientName] = useState('')
+  const [clientEmail, setClientEmail] = useState('')
   const [clientPhone, setClientPhone] = useState('')
   const [clientNit, setClientNit] = useState('')
   const [clientAddress, setClientAddress] = useState('')
@@ -41,22 +42,21 @@ export default function CheckoutPage() {
     setOrderError('')
 
     try {
-      const response = await fetch('/api/orders', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          items: cartItems,
-          cliente: {
-            nombre: clientName,
-            telefono: clientPhone,
-            nit: clientNit,
-            direccion: deliveryType === 'delivery' ? clientAddress : 'Recoger en tienda',
-            empresa: ''
-          },
-          notas: orderNotes,
-          tipo_entrega: deliveryType
-        })
-      })
+      const formData = new FormData()
+      formData.set('clientName', clientName)
+      formData.set('clientEmail', clientEmail)
+      formData.set('clientPhone', clientPhone)
+      formData.set('clientNit', clientNit)
+      formData.set('clientAddress', deliveryType === 'delivery' ? clientAddress : 'Recoger en tienda')
+      formData.set('clientCompany', '')
+      formData.set('notes', orderNotes)
+      formData.set('items', JSON.stringify(cartItems.map((item) => ({
+        sku: item.sku || item.id,
+        name: item.name,
+        quantity: item.quantity,
+        price: item.price,
+      }))))
+      const response = await fetch('/api/orders', { method: 'POST', body: formData })
 
       const data = await response.json()
 
@@ -64,7 +64,7 @@ export default function CheckoutPage() {
         throw new Error(data.error || 'Error al crear el pedido')
       }
 
-      setOrderSuccess({ orderNumber: data.numero })
+      setOrderSuccess({ orderNumber: data.orderNumber })
       clearCart()
       
       setTimeout(() => {
@@ -147,6 +147,16 @@ export default function CheckoutPage() {
                     required
                     value={clientPhone}
                     onChange={(e) => setClientPhone(e.target.value)}
+                    className="w-full rounded-lg border border-input bg-card px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="email" className="block text-sm font-medium mb-2">Correo electrónico (opcional, para recibir actualizaciones)</label>
+                  <input
+                    id="email"
+                    type="email"
+                    value={clientEmail}
+                    onChange={(e) => setClientEmail(e.target.value)}
                     className="w-full rounded-lg border border-input bg-card px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary"
                   />
                 </div>

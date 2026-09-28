@@ -165,8 +165,12 @@ export async function createOrder(formData: FormData) {
 
   // Crear items del pedido
   for (const item of orderItems) {
-    item.pedidoId = orderId
-    await db.insert(pedidoItems).values(item)
+    await db.insert(pedidoItems).values({
+      ...item,
+      pedidoId: orderId,
+      precioUnitario: item.precioUnitario.toFixed(2),
+      total: item.total.toFixed(2),
+    })
   }
 
   revalidatePath('/admin')
@@ -175,17 +179,19 @@ export async function createOrder(formData: FormData) {
   // Enviar notificaciones por email
   try {
     // Email de confirmación al cliente
-    await sendOrderConfirmationEmail(
-      clientEmail,
-      orderNumber,
-      clientName,
-      total,
-      orderItems.map(item => ({
-        name: item.nombre,
-        quantity: item.cantidad,
-        price: item.precioUnitario
-      }))
-    )
+    if (clientEmailRaw && validateEmail(clientEmailRaw)) {
+      await sendOrderConfirmationEmail(
+        clientEmail,
+        orderNumber,
+        clientName,
+        total,
+        orderItems.map(item => ({
+          name: item.nombre,
+          quantity: item.cantidad,
+          price: item.precioUnitario
+        }))
+      )
+    }
 
     // Notificación al admin
     await sendNewOrderNotificationToAdmin(
@@ -210,11 +216,60 @@ export async function updateOrderStatus(orderId: string, status: string) {
     throw new Error('Estado inválido')
   }
 
+  const [order] = await db
+    .select({
+      numero: pedidos.numero,
+      clienteNombre: clientes.nombre,
+      clienteEmail: clientes.email,
+      total: pedidos.total,
+    })
+    .from(pedidos)
+    .leftJoin(clientes, eq(pedidos.clienteId, clientes.id))
+    .where(eq(pedidos.id, orderId))
+    .limit(1)
+
+  if (!order) throw new Error('Pedido no encontrado')
+
   await db.update(pedidos)
     .set({ estado: status })
     .where(eq(pedidos.id, orderId))
 
+  let emailStatus: 'sent' | 'no-email' | 'not-configured' | 'failed' = 'no-email'
+  const email = order.clienteEmail || ''
+  if (email && !email.endsWith('@cliente.local')) {
+    if (!process.env.RESEND_API_KEY || !process.env.EMAIL_FROM) {
+      emailStatus = 'not-configured'
+    } else {
+    try {
+      const { resend } = await import('@/lib/email')
+      const escapeHtml = (value: string) =>
+        value.replace(/[&<>"']/g, (character) => ({
+          '&': '&amp;',
+          '<': '&lt;',
+          '>': '&gt;',
+          '"': '&quot;',
+          "'": '&#39;',
+        })[character] || character)
+      const { error } = await resend.emails.send({
+        from: process.env.EMAIL_FROM,
+        to: email,
+        subject: `Actualización del pedido ${order.numero} - Tornillería Jehová Jireh`,
+        html: `<p>Hola ${escapeHtml(order.clienteNombre || 'cliente')},</p><p>El estado de tu pedido <strong>${escapeHtml(order.numero)}</strong> cambió a <strong>${escapeHtml(status)}</strong>.</p><p>Total: Q ${Number(order.total).toFixed(2)}</p><p>Gracias por comprar con Tornillería Jehová Jireh.</p>`,
+      })
+      if (error) {
+        emailStatus = 'failed'
+        console.error('No se pudo enviar la actualización del pedido por correo:', error)
+      } else emailStatus = 'sent'
+    } catch (error) {
+      emailStatus = 'failed'
+      console.error('No se pudo enviar la actualización del pedido por correo:', error)
+    }
+    }
+  }
+
   revalidatePath('/admin')
+  revalidatePath('/admin/pedidos')
+  return { emailStatus }
 }
 
 export async function getOrders() {
@@ -293,8 +348,8 @@ export async function getOrderById(orderId: string) {
 
 export async function getClients() {
   await requireAdmin()
-  
-  return db.select().from(clientes).orderBy(clientes.createdAt)
+
+  return db.select().from(clientes).orderBy(desc(clientes.createdAt))
 }
 
 export async function getClientByEmail(email: string) {

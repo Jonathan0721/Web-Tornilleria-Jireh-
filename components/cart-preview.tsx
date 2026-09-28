@@ -24,6 +24,7 @@ export function CartPreview() {
   const [showCheckout, setShowCheckout] = useState(false)
   const [deliveryType, setDeliveryType] = useState<DeliveryType>('delivery')
   const [clientName, setClientName] = useState('')
+  const [clientEmail, setClientEmail] = useState('')
   const [clientPhone, setClientPhone] = useState('')
   const [clientNit, setClientNit] = useState('')
   const [clientAddress, setClientAddress] = useState('')
@@ -62,6 +63,10 @@ export function CartPreview() {
       setOrderError('El NIT es obligatorio para guardar tus datos y facturar.')
       return false
     }
+    if (clientEmail.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clientEmail.trim())) {
+      setOrderError('Escribe un correo válido para recibir actualizaciones.')
+      return false
+    }
     if (deliveryType === 'delivery' && !clientAddress.trim()) {
       setOrderError('La dirección es obligatoria para envío a domicilio.')
       return false
@@ -88,6 +93,7 @@ export function CartPreview() {
   const buildOrderFormData = () => {
     const formData = new FormData()
     formData.append('clientName', clientName)
+    formData.append('clientEmail', clientEmail)
     formData.append('clientPhone', clientPhone)
     formData.append('clientNit', clientNit)
     formData.append('clientAddress', deliveryType === 'delivery' ? clientAddress : 'Recoger en tienda')
@@ -402,6 +408,14 @@ export function CartPreview() {
                         onChange={(e) => setClientPhone(e.target.value)}
                         className="h-12 w-full rounded-xl border border-input bg-background px-3 text-base text-foreground"
                         autoComplete="tel"
+                      />
+                      <input
+                        type="email"
+                        placeholder="Correo electrónico (opcional, para recibir actualizaciones)"
+                        value={clientEmail}
+                        onChange={(e) => setClientEmail(e.target.value)}
+                        className="h-12 w-full rounded-xl border border-input bg-background px-3 text-base text-foreground"
+                        autoComplete="email"
                       />
                       <input
                         type="text"

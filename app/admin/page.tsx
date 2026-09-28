@@ -31,7 +31,8 @@ export default async function AdminPage() {
 
   const allOrders = await getOrders()
   const recentOrders = allOrders.slice(0, 10).map((order) => ({
-    id: order.numero,
+    id: order.id,
+    number: order.numero,
     client: order.clienteNombre || 'Cliente',
     date: order.createdAt.toLocaleDateString('es-GT'),
     amount: new Intl.NumberFormat('es-GT', { style: 'currency', currency: 'GTQ' }).format(order.total),
