@@ -1,10 +1,11 @@
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { auth } from '@/lib/auth'
+import { getOrders } from '@/app/actions/orders'
 import TornilleriaDashboard from '@/components/tornilleria-dashboard'
 import { db } from '@/lib/db'
-import { inventario, pedidos, clientes } from '@/lib/db/schema'
-import { desc, sql, eq, and, lt } from 'drizzle-orm'
+import { inventario, clientes } from '@/lib/db/schema'
+import { sql, lt } from 'drizzle-orm'
 
 export default async function AdminPage() {
   const cookieStore = await cookies()
@@ -19,31 +20,53 @@ export default async function AdminPage() {
   }
 
   // Obtener datos reales de la base de datos
-  const inventory = await db.select().from(inventario).orderBy(inventario.nombre)
-  
-  const allOrders = await db.select().from(pedidos).orderBy(desc(pedidos.createdAt)).limit(10)
-  const recentOrders = allOrders
-  
-  const lowStockProducts = await db.select().from(inventario).where(lt(inventario.stock, inventario.stockMinimo))
-  
-  const pendingOrdersData = await db.select().from(pedidos).where(eq(pedidos.estado, 'pendiente'))
-  const preparingOrdersData = await db.select().from(pedidos).where(eq(pedidos.estado, 'preparando'))
-  
+  const inventoryRows = await db.select().from(inventario).orderBy(inventario.nombre)
+  const inventory = inventoryRows.map((product) => ({
+    id: product.id,
+    name: product.nombre,
+    sku: product.sku,
+    category: product.categoria,
+    price: product.precio,
+    stock: product.stock,
+    tipo: product.tipo ?? undefined,
+    medidas: product.medidas ?? undefined,
+  }))
+
+  const allOrders = await getOrders()
+  const recentOrders = allOrders.slice(0, 10).map((order) => ({
+    id: order.numero,
+    client: order.clienteNombre || 'Cliente',
+    date: order.createdAt.toLocaleDateString('es-GT'),
+    amount: new Intl.NumberFormat('es-GT', { style: 'currency', currency: 'GTQ' }).format(order.total),
+    status: order.estado,
+  }))
+
+  const lowStockProducts = inventoryRows
+    .filter((product) => product.stock < product.stockMinimo)
+    .map((product) => ({
+      name: product.nombre,
+      sku: product.sku,
+      stock: product.stock,
+      price: product.precio,
+    }))
+
   const totalClients = await db.select({ count: sql<number>`count(*)` }).from(clientes)
-  
+
   const stats = {
     sales: { value: 0, change: '+0%' }, // Calcular desde pedidos completados
     orders: { value: allOrders.length, change: '+0%' },
-    products: { value: inventory.length, change: '+0' },
+    products: { value: inventoryRows.length, change: '+0' },
     clients: { value: totalClients[0]?.count || 0, change: '+0' }
   }
-  
+
+  const pendingCount = allOrders.filter((order) => order.estado === 'pendiente').length
+  const preparingCount = allOrders.filter((order) => order.estado === 'preparando').length
   const pendingOrders = {
-    total: pendingOrdersData.length + preparingOrdersData.length,
-    pending: pendingOrdersData.length,
-    preparing: preparingOrdersData.length
+    total: pendingCount + preparingCount,
+    pending: pendingCount,
+    preparing: preparingCount
   }
-  
+
   return (
     <TornilleriaDashboard 
       userName={session.user.name || 'Administrador'}

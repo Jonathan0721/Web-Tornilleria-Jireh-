@@ -3,7 +3,7 @@
 import { auth } from '@/lib/auth'
 import { db } from '@/lib/db'
 import { pedidos, pedidoItems, clientes, inventario } from '@/lib/db/schema'
-import { eq, and, sql } from 'drizzle-orm'
+import { eq, and, sql, desc } from 'drizzle-orm'
 import { headers } from 'next/headers'
 import { revalidatePath } from 'next/cache'
 import { randomUUID } from 'crypto'
@@ -236,7 +236,7 @@ export async function getOrders() {
     })
     .from(pedidos)
     .leftJoin(clientes, eq(pedidos.clienteId, clientes.id))
-    .orderBy(pedidos.createdAt)
+    .orderBy(desc(pedidos.createdAt))
 
   return orders.map(order => ({
     ...order,

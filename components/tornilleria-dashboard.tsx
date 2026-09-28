@@ -17,6 +17,15 @@ const navItems = [
   { label: 'Clientes', icon: Users },
 ]
 
+const orderStatusLabels: Record<string, string> = {
+  pendiente: 'Pendiente',
+  confirmado: 'Confirmado',
+  preparando: 'Preparando',
+  enviado: 'Enviado',
+  entregado: 'Entregado',
+  cancelado: 'Cancelado',
+}
+
 type InventoryItem = { id: string; name: string; sku: string; category: string; price: string; stock: number; tipo?: string; medidas?: string }
 type DashboardStats = { sales: { value: number; change: string }; orders: { value: number; change: string }; products: { value: number; change: string }; clients: { value: number; change: string } }
 type RecentOrder = { id: string; client: string; date: string; amount: string; status: string }
@@ -190,8 +199,8 @@ export function TornilleriaDashboard({
                           <td className="whitespace-nowrap px-6 py-4 text-muted-foreground">{order.client}</td>
                           <td className="whitespace-nowrap px-6 py-4 font-medium">{order.amount}</td>
                           <td className="whitespace-nowrap px-6 py-4">
-                            <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${order.status === 'Entregado' ? 'bg-secondary text-foreground' : 'bg-accent text-accent-foreground'}`}>
-                              {order.status}
+                            <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${order.status === 'entregado' ? 'bg-secondary text-foreground' : 'bg-accent text-accent-foreground'}`}>
+                              {orderStatusLabels[order.status] || order.status}
                             </span>
                           </td>
                         </tr>
