@@ -109,7 +109,7 @@ export function TornilleriaDashboard({
         <div className="mb-10 flex items-center justify-between px-2">
           <div className="flex items-center gap-3">
             <div className="flex size-10 items-center justify-center rounded-xl bg-primary text-primary-foreground"><span className="font-mono text-lg font-bold">TJ</span></div>
-            <div><p className="font-semibold tracking-tight">TORNILLOS JEHOVA JIREH</p><p className="text-xs text-muted-foreground">Suministros industriales</p></div>
+            <div><p className="font-semibold tracking-tight">TORNILLOS JEHOVA JIREH</p></div>
           </div>
           <a href="/" className="mt-3 flex items-center gap-2 px-2 text-xs font-medium text-primary hover:underline">Ver tienda <ArrowUpRight className="size-3" /></a>
           <button onClick={() => setMobileOpen(false)} className="text-muted-foreground lg:hidden" aria-label="Cerrar menú"><X /></button>

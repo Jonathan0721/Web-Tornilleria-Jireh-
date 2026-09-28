@@ -35,7 +35,6 @@ export function TornilleriaStore({ initialProducts = [] }: { initialProducts?: S
             <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary font-mono font-bold text-primary-foreground">TJ</span>
             <span className="min-w-0">
               <strong className="block truncate text-sm tracking-tight sm:text-base">TORNILLOS JEHOVA JIREH</strong>
-              <small className="hidden text-xs text-muted-foreground sm:block">Suministros industriales</small>
             </span>
           </a>
           <div className="relative ml-auto hidden max-w-xl flex-1 md:block">

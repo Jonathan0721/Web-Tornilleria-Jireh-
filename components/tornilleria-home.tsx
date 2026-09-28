@@ -82,7 +82,6 @@ export default function TornilleriaHome() {
             </span>
             <span>
               <strong className="block tracking-tight">TORNILLOS JEHOVA JIREH</strong>
-              <small className="text-xs text-muted-foreground">Suministros industriales</small>
             </span>
           </Link>
           <nav className="flex items-center gap-2 text-sm sm:gap-3">
