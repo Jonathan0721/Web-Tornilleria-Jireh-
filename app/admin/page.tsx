@@ -1,4 +1,4 @@
-import { cookies } from 'next/headers'
+import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { auth } from '@/lib/auth'
 import { getOrders } from '@/app/actions/orders'
@@ -8,11 +8,8 @@ import { inventario, clientes } from '@/lib/db/schema'
 import { sql, lt } from 'drizzle-orm'
 
 export default async function AdminPage() {
-  const cookieStore = await cookies()
   const session = await auth.api.getSession({
-    headers: new Headers({
-      cookie: cookieStore.toString()
-    })
+    headers: await headers()
   })
 
   if (!session) {
