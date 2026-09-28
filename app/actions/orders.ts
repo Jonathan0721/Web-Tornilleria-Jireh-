@@ -2,7 +2,7 @@
 
 import { auth } from '@/lib/auth'
 import { db } from '@/lib/db'
-import { pedidos, pedidoItems, clientes, inventario } from '@/lib/db/schema'
+import { pedidos, pedidoItems, pedidoHistorial, clientes, inventario } from '@/lib/db/schema'
 import { eq, and, sql, desc } from 'drizzle-orm'
 import { headers } from 'next/headers'
 import { revalidatePath } from 'next/cache'
@@ -13,6 +13,7 @@ async function requireAdmin() {
   const session = await auth.api.getSession({ headers: await headers() })
   if (!session?.user) throw new Error('No autorizado')
   if (!session.user.email) throw new Error('Email de usuario no válido')
+  return session.user.email
 }
 
 function validateEmail(email: string): boolean {
@@ -162,6 +163,13 @@ export async function createOrder(formData: FormData) {
     total: total.toFixed(2),
     notas: notes
   })
+  await db.insert(pedidoHistorial).values({
+    id: randomUUID(),
+    pedidoId: orderId,
+    estadoAnterior: null,
+    estadoNuevo: 'pendiente',
+    cambiadoPor: 'Sistema',
+  })
 
   // Crear items del pedido
   for (const item of orderItems) {
@@ -209,30 +217,49 @@ export async function createOrder(formData: FormData) {
 }
 
 export async function updateOrderStatus(orderId: string, status: string) {
-  await requireAdmin()
+  const adminEmail = await requireAdmin()
   
   const validStatuses = ['pendiente', 'confirmado', 'preparando', 'enviado', 'entregado', 'cancelado']
   if (!validStatuses.includes(status)) {
     throw new Error('Estado inválido')
   }
 
-  const [order] = await db
-    .select({
-      numero: pedidos.numero,
-      clienteNombre: clientes.nombre,
-      clienteEmail: clientes.email,
-      total: pedidos.total,
+  const order = await db.transaction(async (tx) => {
+    const [currentOrder] = await tx
+      .select({
+        numero: pedidos.numero,
+        estado: pedidos.estado,
+        clienteNombre: clientes.nombre,
+        clienteEmail: clientes.email,
+        total: pedidos.total,
+      })
+      .from(pedidos)
+      .leftJoin(clientes, eq(pedidos.clienteId, clientes.id))
+      .where(eq(pedidos.id, orderId))
+      .limit(1)
+
+    if (!currentOrder) throw new Error('Pedido no encontrado')
+    if (currentOrder.estado === status) return { ...currentOrder, changed: false }
+
+    await tx.update(pedidos)
+      .set({ estado: status })
+      .where(eq(pedidos.id, orderId))
+    await tx.insert(pedidoHistorial).values({
+      id: randomUUID(),
+      pedidoId: orderId,
+      estadoAnterior: currentOrder.estado,
+      estadoNuevo: status,
+      cambiadoPor: adminEmail,
     })
-    .from(pedidos)
-    .leftJoin(clientes, eq(pedidos.clienteId, clientes.id))
-    .where(eq(pedidos.id, orderId))
-    .limit(1)
 
-  if (!order) throw new Error('Pedido no encontrado')
+    return { ...currentOrder, changed: true }
+  })
 
-  await db.update(pedidos)
-    .set({ estado: status })
-    .where(eq(pedidos.id, orderId))
+  if (!order.changed) {
+    revalidatePath('/admin')
+    revalidatePath('/admin/pedidos')
+    return { emailStatus: 'unchanged' as const }
+  }
 
   let emailStatus: 'sent' | 'no-email' | 'not-configured' | 'failed' = 'no-email'
   const email = order.clienteEmail || ''
@@ -254,7 +281,7 @@ export async function updateOrderStatus(orderId: string, status: string) {
         from: process.env.EMAIL_FROM,
         to: email,
         subject: `Actualización del pedido ${order.numero} - Tornillería Jehová Jireh`,
-        html: `<p>Hola ${escapeHtml(order.clienteNombre || 'cliente')},</p><p>El estado de tu pedido <strong>${escapeHtml(order.numero)}</strong> cambió a <strong>${escapeHtml(status)}</strong>.</p><p>Total: Q ${Number(order.total).toFixed(2)}</p><p>Gracias por comprar con Tornillería Jehová Jireh.</p>`,
+        html: `<p>Hola ${escapeHtml(order.clienteNombre || 'cliente')},</p><p>El estado de tu pedido <strong>${escapeHtml(order.numero)}</strong> cambió a <strong>${escapeHtml(orderStatusLabels[status])}</strong>.</p><p>Total: Q ${Number(order.total).toFixed(2)}</p><p>Gracias por comprar con Tornillería Jehová Jireh.</p>`,
       })
       if (error) {
         emailStatus = 'failed'
@@ -319,7 +346,9 @@ export async function getOrderById(orderId: string) {
       clienteEmail: clientes.email,
       clienteTelefono: clientes.telefono,
       clienteEmpresa: clientes.empresa,
-      clienteDireccion: clientes.direccion
+      clienteDireccion: clientes.direccion,
+      clienteNit: clientes.nit,
+      clienteCreatedAt: clientes.createdAt
     })
     .from(pedidos)
     .leftJoin(clientes, eq(pedidos.clienteId, clientes.id))
@@ -333,6 +362,18 @@ export async function getOrderById(orderId: string) {
     .from(pedidoItems)
     .where(eq(pedidoItems.pedidoId, orderId))
 
+  const history = await db
+    .select({
+      id: pedidoHistorial.id,
+      estadoAnterior: pedidoHistorial.estadoAnterior,
+      estadoNuevo: pedidoHistorial.estadoNuevo,
+      cambiadoPor: pedidoHistorial.cambiadoPor,
+      createdAt: pedidoHistorial.createdAt,
+    })
+    .from(pedidoHistorial)
+    .where(eq(pedidoHistorial.pedidoId, orderId))
+    .orderBy(desc(pedidoHistorial.createdAt))
+
   return {
     ...order[0],
     subtotal: Number(order[0].subtotal),
@@ -342,7 +383,8 @@ export async function getOrderById(orderId: string) {
       ...item,
       precioUnitario: Number(item.precioUnitario),
       total: Number(item.total)
-    }))
+    })),
+    history,
   }
 }
 
@@ -350,6 +392,15 @@ export async function getClients() {
   await requireAdmin()
 
   return db.select().from(clientes).orderBy(desc(clientes.createdAt))
+}
+
+const orderStatusLabels: Record<string, string> = {
+  pendiente: 'Pendiente',
+  confirmado: 'Confirmado',
+  preparando: 'Preparando',
+  enviado: 'Enviado',
+  entregado: 'Entregado',
+  cancelado: 'Cancelado',
 }
 
 export async function getClientByEmail(email: string) {

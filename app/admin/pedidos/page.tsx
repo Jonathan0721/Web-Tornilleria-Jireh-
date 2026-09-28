@@ -1,7 +1,7 @@
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { auth } from '@/lib/auth'
-import { getOrders, updateOrderStatus } from '@/app/actions/orders'
+import { getOrderById, getOrders, updateOrderStatus } from '@/app/actions/orders'
 import TornilleriaDashboard from '@/components/tornilleria-dashboard'
 
 export default async function PedidosPage() {
@@ -19,7 +19,13 @@ export default async function PedidosPage() {
     amount: new Intl.NumberFormat('es-GT', { style: 'currency', currency: 'GTQ' }).format(order.total),
     status: order.estado,
     phone: order.clienteTelefono || '',
+    email: order.clienteEmail || '',
   }))
 
-  return <TornilleriaDashboard activeSection="Pedidos" recentOrders={recentOrders} updateOrderStatus={updateOrderStatus} />
+  return <TornilleriaDashboard
+    activeSection="Pedidos"
+    recentOrders={recentOrders}
+    updateOrderStatus={updateOrderStatus}
+    getOrderById={getOrderById}
+  />
 }

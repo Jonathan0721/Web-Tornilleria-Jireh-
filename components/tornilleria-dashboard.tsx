@@ -3,7 +3,7 @@
 import { useState, useTransition } from 'react'
 import { signOut } from '@/lib/auth-client'
 import { createProduct, updateProduct, deleteProduct } from '@/app/actions/inventory'
-import type { updateOrderStatus as UpdateOrderStatus } from '@/app/actions/orders'
+import type { getOrderById as GetOrderById, updateOrderStatus as UpdateOrderStatus } from '@/app/actions/orders'
 import { 
   House, ClipboardList, PackageSearch, Box, Users, Settings, 
   Search, Bell, X, Menu, ArrowUpRight, ChevronDown, Plus, Truck,
@@ -29,7 +29,8 @@ const orderStatusLabels: Record<string, string> = {
 
 type InventoryItem = { id: string; name: string; sku: string; category: string; price: string; stock: number; tipo?: string; medidas?: string }
 type DashboardStats = { sales: { value: number; change: string }; orders: { value: number; change: string }; products: { value: number; change: string }; clients: { value: number; change: string } }
-type RecentOrder = { id: string; number?: string; client: string; date: string; amount: string; status: string; phone?: string }
+type RecentOrder = { id: string; number?: string; client: string; date: string; amount: string; status: string; phone?: string; email?: string }
+type OrderDetail = NonNullable<Awaited<ReturnType<typeof GetOrderById>>>
 type Client = { id: string; name: string; email: string; phone: string; nit: string; company: string; createdAt: string }
 type LowStockProduct = { name: string; sku: string; stock: number; price: string }
 type PendingOrdersData = { total: number; pending: number; preparing: number }
@@ -41,6 +42,7 @@ export function TornilleriaDashboard({
   recentOrders = [],
   clients = [],
   updateOrderStatus,
+  getOrderById,
   lowStockProducts = [],
   pendingOrders,
   activeSection = 'Resumen'
@@ -51,6 +53,7 @@ export function TornilleriaDashboard({
   recentOrders?: RecentOrder[]
   clients?: Client[]
   updateOrderStatus?: typeof UpdateOrderStatus
+  getOrderById?: typeof GetOrderById
   lowStockProducts?: LowStockProduct[]
   pendingOrders?: PendingOrdersData
   activeSection?: string
@@ -63,10 +66,41 @@ export function TornilleriaDashboard({
   const [tipoFilter, setTipoFilter] = useState('todos')
   const [orderStatuses, setOrderStatuses] = useState<Record<string, string>>({})
   const [orderNotices, setOrderNotices] = useState<Record<string, string>>({})
+  const [orderSearch, setOrderSearch] = useState('')
+  const [orderStatusFilter, setOrderStatusFilter] = useState('todos')
+  const [selectedOrder, setSelectedOrder] = useState<OrderDetail | null>(null)
+  const [detailLoading, setDetailLoading] = useState(false)
+  const [detailError, setDetailError] = useState('')
 
   const whatsappPhone = (phone: string) => {
     const digits = phone.replace(/\D/g, '').replace(/^0/, '')
     return digits.startsWith('502') ? digits : `502${digits}`
+  }
+
+  const filteredOrders = recentOrders.filter((order) => {
+    const term = orderSearch.trim().toLowerCase()
+    const matchesSearch = !term || [order.number, order.client, order.phone, order.email]
+      .some((value) => value?.toLowerCase().includes(term))
+    const matchesStatus = orderStatusFilter === 'todos' || (orderStatuses[order.id] || order.status) === orderStatusFilter
+    return matchesSearch && matchesStatus
+  })
+
+  const showOrderDetail = async (orderId: string) => {
+    if (!getOrderById) return
+    setDetailLoading(true)
+    setDetailError('')
+    try {
+      const detail = await getOrderById(orderId)
+      if (!detail) {
+        setDetailError('No se encontró ese pedido.')
+        return
+      }
+      setSelectedOrder(detail)
+    } catch {
+      setDetailError('No se pudo cargar el detalle del pedido.')
+    } finally {
+      setDetailLoading(false)
+    }
   }
 
   return (
@@ -192,6 +226,25 @@ export function TornilleriaDashboard({
                     <p className="mt-1 text-sm text-muted-foreground">Historial completo de pedidos</p>
                   </div>
                 </div>
+                <div className="flex flex-col gap-3 border-b border-border p-4 sm:flex-row">
+                  <input
+                    value={orderSearch}
+                    onChange={(event) => setOrderSearch(event.target.value)}
+                    placeholder="Buscar por pedido, cliente, teléfono o correo"
+                    aria-label="Buscar pedidos"
+                    className="h-11 flex-1 rounded-lg border border-input bg-background px-3 text-sm"
+                  />
+                  <select
+                    value={orderStatusFilter}
+                    onChange={(event) => setOrderStatusFilter(event.target.value)}
+                    aria-label="Filtrar pedidos por estado"
+                    className="h-11 rounded-lg border border-input bg-background px-3 text-sm"
+                  >
+                    <option value="todos">Todos los estados</option>
+                    {Object.entries(orderStatusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                  </select>
+                </div>
+                {detailError ? <p role="alert" className="border-b border-border px-4 py-3 text-sm text-destructive">{detailError}</p> : null}
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-sm">
                     <thead className="bg-muted/50 text-xs text-muted-foreground">
@@ -200,10 +253,11 @@ export function TornilleriaDashboard({
                         <th className="px-6 py-3 font-medium">Cliente</th>
                         <th className="px-6 py-3 font-medium">Importe</th>
                         <th className="px-6 py-3 font-medium">Estado y contacto</th>
+                        <th className="px-6 py-3 font-medium">Detalle</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {recentOrders.length > 0 ? recentOrders.map((order) => {
+                      {filteredOrders.length > 0 ? filteredOrders.map((order) => {
                         const currentStatus = orderStatuses[order.id] || order.status
                         const statusLabel = orderStatusLabels[currentStatus] || currentStatus
                         const whatsappMessage = `Hola ${order.client}, te actualizamos sobre tu pedido ${order.number || order.id}: ${currentStatus === 'preparando' ? 'ya estamos preparando tu pedido' : currentStatus === 'enviado' ? 'tu pedido ya fue enviado' : `su estado es ${statusLabel.toLowerCase()}`}. - Tornillería Jehová Jireh.`
@@ -227,7 +281,9 @@ export function TornilleriaDashboard({
                                     try {
                                       const result = await updateOrderStatus?.(order.id, nextStatus)
                                       setOrderStatuses((current) => ({ ...current, [order.id]: nextStatus }))
-                                      const notice = result?.emailStatus === 'sent'
+                                      const notice = result?.emailStatus === 'unchanged'
+                                        ? 'El pedido ya tenía ese estado.'
+                                        : result?.emailStatus === 'sent'
                                         ? 'Estado guardado y correo enviado.'
                                         : result?.emailStatus === 'failed'
                                           ? 'Estado guardado; falló el correo. Revisa Resend o avisa por WhatsApp.'
@@ -257,14 +313,27 @@ export function TornilleriaDashboard({
                                 </a>
                               ) : <span className="text-xs text-muted-foreground">Sin teléfono</span>}
                             </div>
-                            {orderNotices[order.id] ? <p role="status" className="mt-2 text-xs text-muted-foreground">{orderNotices[order.id]}</p> : null}
+                              {order.email && !order.email.endsWith('@cliente.local')
+                                ? <p className="mt-2 text-xs text-muted-foreground">{order.email}</p>
+                                : null}
+                              {orderNotices[order.id] ? <p role="status" className="mt-2 text-xs text-muted-foreground">{orderNotices[order.id]}</p> : null}
+                          </td>
+                          <td className="whitespace-nowrap px-6 py-4">
+                              <button
+                                type="button"
+                                onClick={() => void showOrderDetail(order.id)}
+                                disabled={!getOrderById || detailLoading}
+                                className="min-h-10 rounded-lg border border-input px-3 text-xs font-medium hover:bg-muted disabled:opacity-50"
+                              >
+                                {detailLoading ? 'Cargando...' : 'Ver detalle'}
+                              </button>
                           </td>
                         </tr>
                         )
                       }) : (
                         <tr>
-                          <td colSpan={4} className="px-6 py-8 text-center text-muted-foreground">
-                            No hay pedidos registrados
+                          <td colSpan={5} className="px-6 py-8 text-center text-muted-foreground">
+                            {recentOrders.length ? 'No hay pedidos que coincidan con la búsqueda o el filtro.' : 'No hay pedidos registrados'}
                           </td>
                         </tr>
                       )}
@@ -436,6 +505,104 @@ export function TornilleriaDashboard({
         </main>
       </div>
       
+      {selectedOrder ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+          onClick={() => setSelectedOrder(null)}
+        >
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="order-detail-title"
+            onClick={(event) => event.stopPropagation()}
+            className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-2xl border border-border bg-card p-5 shadow-xl sm:p-7"
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-sm text-muted-foreground">Detalle del pedido</p>
+                <h2 id="order-detail-title" className="mt-1 text-2xl font-semibold">{selectedOrder.numero}</h2>
+              </div>
+              <button type="button" onClick={() => setSelectedOrder(null)} aria-label="Cerrar detalle" className="rounded-lg p-2 hover:bg-muted">
+                <X className="size-5" />
+              </button>
+            </div>
+
+            <div className="mt-6 grid gap-5 sm:grid-cols-2">
+              <div className="rounded-xl border border-border p-4">
+                <h3 className="font-semibold">Cliente y entrega</h3>
+                <p className="mt-3 text-sm">{selectedOrder.clienteNombre || 'Cliente'}</p>
+                <p className="mt-1 text-sm text-muted-foreground">{selectedOrder.clienteTelefono || 'Sin teléfono'}</p>
+                {selectedOrder.clienteEmail && !selectedOrder.clienteEmail.endsWith('@cliente.local')
+                  ? <p className="mt-1 break-all text-sm text-muted-foreground">{selectedOrder.clienteEmail}</p>
+                  : <p className="mt-1 text-sm text-muted-foreground">Sin correo registrado</p>}
+                {selectedOrder.clienteNit ? <p className="mt-2 text-sm">NIT: {selectedOrder.clienteNit}</p> : null}
+                {selectedOrder.clienteEmpresa ? <p className="mt-1 text-sm">Empresa: {selectedOrder.clienteEmpresa}</p> : null}
+                {selectedOrder.clienteDireccion ? <p className="mt-2 text-sm">Dirección: {selectedOrder.clienteDireccion}</p> : null}
+              </div>
+              <div className="rounded-xl border border-border p-4">
+                <h3 className="font-semibold">Resumen</h3>
+                <p className="mt-3 text-sm">Fecha: {selectedOrder.createdAt.toLocaleString('es-GT')}</p>
+                <p className="mt-2 text-sm">Estado: {orderStatusLabels[selectedOrder.estado] || selectedOrder.estado}</p>
+                {selectedOrder.notas ? <p className="mt-2 whitespace-pre-wrap text-sm">Notas: {selectedOrder.notas}</p> : null}
+                <div className="mt-4 space-y-1 border-t border-border pt-3 text-sm">
+                  <p className="flex justify-between"><span>Subtotal</span><span>Q {selectedOrder.subtotal.toFixed(2)}</span></p>
+                  <p className="flex justify-between"><span>IVA</span><span>Q {selectedOrder.impuestos.toFixed(2)}</span></p>
+                  <p className="flex justify-between font-semibold"><span>Total</span><span>Q {selectedOrder.total.toFixed(2)}</span></p>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-6 overflow-x-auto rounded-xl border border-border">
+              <table className="w-full text-left text-sm">
+                <thead className="bg-muted/50 text-xs text-muted-foreground">
+                  <tr>
+                    <th className="px-4 py-3 font-medium">Producto</th>
+                    <th className="px-4 py-3 font-medium">SKU</th>
+                    <th className="px-4 py-3 text-right font-medium">Cantidad</th>
+                    <th className="px-4 py-3 text-right font-medium">Precio</th>
+                    <th className="px-4 py-3 text-right font-medium">Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {selectedOrder.items.map((item) => (
+                    <tr key={item.id} className="border-t border-border">
+                      <td className="px-4 py-3">{item.nombre}</td>
+                      <td className="px-4 py-3 text-muted-foreground">{item.sku}</td>
+                      <td className="px-4 py-3 text-right">{item.cantidad}</td>
+                      <td className="px-4 py-3 text-right">Q {item.precioUnitario.toFixed(2)}</td>
+                      <td className="px-4 py-3 text-right">Q {item.total.toFixed(2)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="mt-6">
+              <h3 className="font-semibold">Historial de estados</h3>
+              <ol className="mt-3 space-y-3">
+                {selectedOrder.history.map((entry) => (
+                  <li key={entry.id} className="flex gap-3 text-sm">
+                    <span className="mt-1.5 size-2 shrink-0 rounded-full bg-primary" />
+                    <div>
+                      <p>
+                        {entry.estadoAnterior
+                          ? `${orderStatusLabels[entry.estadoAnterior] || entry.estadoAnterior} → `
+                          : ''}
+                        <strong>{orderStatusLabels[entry.estadoNuevo] || entry.estadoNuevo}</strong>
+                      </p>
+                      <p className="mt-0.5 text-xs text-muted-foreground">
+                        {entry.createdAt.toLocaleString('es-GT')}
+                        {entry.cambiadoPor ? ` · ${entry.cambiadoPor}` : ''}
+                      </p>
+                    </div>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          </section>
+        </div>
+      ) : null}
+
       {/* Modal de Configuración */}
       {settingsOpen && <div className="fixed inset-0 z-50 bg-foreground/30" onClick={() => setSettingsOpen(false)}><div onClick={(e) => e.stopPropagation()} className="absolute right-0 top-0 flex h-full w-full max-w-md flex-col bg-card shadow-xl"><div className="flex items-center justify-between border-b border-border p-6"><div><h2 className="text-xl font-semibold">Configuración</h2><p className="text-sm text-muted-foreground">Ajustes de tu cuenta y sistema</p></div><button onClick={() => setSettingsOpen(false)} aria-label="Cerrar"><X /></button></div><div className="flex-1 p-6"><div className="space-y-6"><div><h3 className="font-medium mb-3">Información de la tienda</h3><div className="space-y-3"><div className="flex items-center justify-between"><span className="text-sm text-muted-foreground">Nombre</span><span className="text-sm font-medium">Tornilleria Jehova Jireh</span></div><div className="flex items-center justify-between"><span className="text-sm text-muted-foreground">Moneda</span><span className="text-sm font-medium">Quetzales (Q)</span></div><div className="flex items-center justify-between"><span className="text-sm text-muted-foreground">IVA</span><span className="text-sm font-medium">12%</span></div></div></div><div><h3 className="font-medium mb-3">Preferencias</h3><div className="space-y-3"><label className="flex items-center justify-between"><span className="text-sm">Notificaciones por email</span><input type="checkbox" defaultChecked className="rounded border-input" /></label><label className="flex items-center justify-between"><span className="text-sm">Alertas de stock bajo</span><input type="checkbox" defaultChecked className="rounded border-input" /></label></div></div><div className="rounded-lg bg-muted p-4"><p className="text-sm font-medium mb-2">Estado del sistema</p><p className="text-xs text-muted-foreground">Base de datos: <span className="text-destructive">No configurada</span></p><p className="text-xs text-muted-foreground mt-1">Autenticación: <span className="text-destructive">Deshabilitada temporalmente</span></p></div></div></div></div></div>}
       
