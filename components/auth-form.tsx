@@ -22,7 +22,7 @@ export default function AuthForm() {
       : await signUp.email({ email, password, name })
     setLoading(false)
     if (result.error) { setError('No se pudo iniciar sesión. Revisa tus datos e inténtalo de nuevo.'); return }
-    router.push('/')
+    router.push('/admin')
     router.refresh()
   }
 
