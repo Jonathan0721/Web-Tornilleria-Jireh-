@@ -36,7 +36,9 @@ export function proxy(request: NextRequest) {
       )
     }
 
-    const session = request.cookies.get('better-auth.session_token')
+    const session =
+      request.cookies.get('__Secure-better-auth.session_token') ??
+      request.cookies.get('better-auth.session_token')
     
     if (!session) {
       // Redirigir a login si no hay sesión
