@@ -66,7 +66,7 @@ export default function LiveChat() {
         <div className="fixed bottom-24 right-6 z-50 w-80 max-w-[calc(100vw-3rem)] bg-card border border-border rounded-lg shadow-xl">
           <div className="bg-primary text-primary-foreground p-4 rounded-t-lg">
             <h3 className="font-semibold">Chat de Soporte</h3>
-            <p className="text-sm opacity-90">Tornilleria Jehova Jireh</p>
+            <p className="text-sm opacity-90">TORNILLOS JEHOVA JIREH</p>
           </div>
 
           <div className="h-80 overflow-y-auto p-4 space-y-3">

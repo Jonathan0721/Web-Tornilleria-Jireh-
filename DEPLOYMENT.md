@@ -1,6 +1,6 @@
-# Guía de Despliegue - Tornilleria Jehova Jireh
+# Guía de Despliegue - TORNILLOS JEHOVA JIREH
 
-Esta guía te ayudará a configurar y desplegar el proyecto de e-commerce de Tornilleria Jehova Jireh.
+Esta guía te ayudará a configurar y desplegar el proyecto de e-commerce de TORNILLOS JEHOVA JIREH.
 
 ## 📋 Tabla de Contenidos
 

@@ -33,7 +33,7 @@ export function generateInvoicePDF(data: InvoiceData): jsPDF {
   // Header
   doc.setFontSize(20)
   doc.setTextColor(0, 0, 0)
-  doc.text('Tornilleria Jehova Jireh', margin, y)
+  doc.text('TORNILLOS JEHOVA JIREH', margin, y)
   y += 10
   
   doc.setFontSize(10)
@@ -141,7 +141,7 @@ export function generateInvoicePDF(data: InvoiceData): jsPDF {
   doc.setTextColor(150, 150, 150)
   doc.text('Gracias por su compra', margin, y)
   y += 5
-  doc.text('Tornilleria Jehova Jireh', margin, y)
+  doc.text('TORNILLOS JEHOVA JIREH', margin, y)
 
   return doc
 }

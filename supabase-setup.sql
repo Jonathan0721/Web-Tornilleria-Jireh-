@@ -1,5 +1,5 @@
 -- ============================================
--- SCRIPT SQL PARA SUPABASE - TORNILLERIA JEHOVA JIREH
+-- SCRIPT SQL PARA SUPABASE - TORNILLOS JEHOVA JIREH
 -- ============================================
 -- Ejecutar este script en el SQL Editor de Supabase
 -- Este script crea todas las tablas, índices y triggers necesarios

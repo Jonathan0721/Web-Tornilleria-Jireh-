@@ -40,8 +40,8 @@ export default function TornilleriaProductDetail({ product }: { product: any }) 
         <div className="mx-auto flex h-20 max-w-7xl items-center justify-between gap-6 px-5 md:px-8">
           <Link href="/catalogo" className="flex shrink-0 items-center gap-3 px-2 py-2 min-h-[44px] hover:opacity-80 active:opacity-70 transition-opacity cursor-pointer">
             <span className="flex size-10 items-center justify-center rounded-xl bg-primary font-mono font-bold text-primary-foreground pointer-events-none">TJ</span>
-            <span className="hidden sm:block font-semibold tracking-tight">Tornilleria Jehova Jireh</span>
-            <span className="sm:hidden font-semibold tracking-tight text-sm">TJ Tornilleria</span>
+            <span className="hidden sm:block font-semibold tracking-tight">TORNILLOS JEHOVA JIREH</span>
+            <span className="sm:hidden font-semibold tracking-tight text-sm">TORNILLOS JEHOVA JIREH</span>
           </Link>
           <CartPreview />
         </div>

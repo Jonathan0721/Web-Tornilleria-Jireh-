@@ -1,4 +1,4 @@
-# Guía de Despliegue Profesional - Tornilleria Jehova Jireh
+# Guía de Despliegue Profesional - TORNILLOS JEHOVA JIREH
 
 Esta guía cubre el flujo profesional de desarrollo, pruebas y despliegue en producción.
 

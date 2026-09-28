@@ -1,4 +1,4 @@
-# Guía de Seguridad - Tornilleria Jehova Jireh
+# Guía de Seguridad - TORNILLOS JEHOVA JIREH
 
 Esta guía cubre las medidas de seguridad implementadas y recomendaciones adicionales para proteger tu aplicación.
 

@@ -6,12 +6,12 @@ import GoogleAnalytics from '@/components/google-analytics'
 import LiveChat from '@/components/live-chat'
 
 export const metadata: Metadata = {
-  title: 'Tornilleria Jehova Jireh | Suministros Industriales en Guatemala',
+  title: 'TORNILLOS JEHOVA JIREH | Suministros Industriales en Guatemala',
   description: 'Venta de tornillos, tuercas, arandelas y suministros industriales en Guatemala. Catálogo online, precios competitivos, envíos nacionales y atención personalizada.',
   keywords: 'tornillos, tuercas, arandelas, suministros industriales, ferretería, Guatemala, construcción, fijaciones, hardware industrial',
-  authors: [{ name: 'Tornilleria Jehova Jireh' }],
-  creator: 'Tornilleria Jehova Jireh',
-  publisher: 'Tornilleria Jehova Jireh',
+  authors: [{ name: 'TORNILLOS JEHOVA JIREH' }],
+  creator: 'TORNILLOS JEHOVA JIREH',
+  publisher: 'TORNILLOS JEHOVA JIREH',
   formatDetection: {
     email: false,
     address: false,
@@ -19,16 +19,16 @@ export const metadata: Metadata = {
   },
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'),
   openGraph: {
-    title: 'Tornilleria Jehova Jireh | Suministros Industriales en Guatemala',
+    title: 'TORNILLOS JEHOVA JIREH | Suministros Industriales en Guatemala',
     description: 'Venta de tornillos, tuercas, arandelas y suministros industriales en Guatemala. Catálogo online y envíos nacionales.',
     url: '/',
-    siteName: 'Tornilleria Jehova Jireh',
+    siteName: 'TORNILLOS JEHOVA JIREH',
     locale: 'es_GT',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Tornilleria Jehova Jireh | Suministros Industriales en Guatemala',
+    title: 'TORNILLOS JEHOVA JIREH | Suministros Industriales en Guatemala',
     description: 'Venta de tornillos, tuercas, arandelas y suministros industriales en Guatemala.',
   },
   robots: {

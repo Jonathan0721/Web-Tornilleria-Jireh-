@@ -65,7 +65,7 @@ const steps = [
 export default function TornilleriaHome() {
   const whatsappHref = WHATSAPP_NUMBER
     ? `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(
-        'Hola, vengo de la web de Tornilleria Jehova Jireh. Quiero cotizar / pedir.',
+        'Hola, vengo de la web de TORNILLOS JEHOVA JIREH. Quiero cotizar / pedir.',
       )}`
     : '#contacto'
 
@@ -81,7 +81,7 @@ export default function TornilleriaHome() {
               TJ
             </span>
             <span>
-              <strong className="block tracking-tight">Tornilleria Jehova Jireh</strong>
+              <strong className="block tracking-tight">TORNILLOS JEHOVA JIREH</strong>
               <small className="text-xs text-muted-foreground">Suministros industriales</small>
             </span>
           </Link>
@@ -285,7 +285,7 @@ export default function TornilleriaHome() {
           <div className="grid gap-4 self-start rounded-2xl border border-border bg-background p-6 text-sm leading-6">
             <div>
               <p className="font-semibold">Negocio</p>
-              <p className="mt-1 text-muted-foreground">Tornilleria Jehova Jireh</p>
+              <p className="mt-1 text-muted-foreground">TORNILLOS JEHOVA JIREH</p>
             </div>
             <div>
               <p className="font-semibold">Qué vendemos</p>
@@ -305,7 +305,7 @@ export default function TornilleriaHome() {
 
       <footer className="border-t border-border">
         <div className="mx-auto flex max-w-7xl flex-col gap-4 px-5 py-8 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between md:px-8">
-          <span>© 2026 Tornilleria Jehova Jireh · Guatemala</span>
+          <span>© 2026 TORNILLOS JEHOVA JIREH · Guatemala</span>
           <div className="flex flex-wrap gap-4">
             <Link href="/catalogo" className="font-medium text-foreground transition-opacity hover:opacity-80">
               Catálogo

@@ -1,7 +1,7 @@
 import { ClientRegistrationForm } from '@/components/client-registration-form'
 
 export const metadata = {
-  title: 'Registro de cliente | Tornilleria Jehova Jireh',
+  title: 'Registro de cliente | TORNILLOS JEHOVA JIREH',
   description: 'Registra tu empresa o datos personales para cotizaciones y facturación más rápidas.',
 }
 

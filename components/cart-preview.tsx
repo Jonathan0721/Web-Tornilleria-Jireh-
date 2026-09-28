@@ -124,7 +124,7 @@ export function CartPreview() {
         ? `\n📍 Dirección: ${clientAddress}`
         : '\n📍 Recoger en tienda física'
 
-    let message = `🛒 *NUEVO PEDIDO - Tornillería Jehova Jireh*\n\n`
+    let message = `🛒 *NUEVO PEDIDO - TORNILLOS JEHOVA JIREH*\n\n`
     if (orderNumber) message += `🧾 *Pedido:* ${orderNumber}\n`
     message += `👤 *Cliente:* ${clientName}\n`
     message += `📱 *Teléfono:* ${clientPhone}\n`

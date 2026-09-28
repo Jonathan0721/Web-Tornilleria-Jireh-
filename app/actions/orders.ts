@@ -280,8 +280,8 @@ export async function updateOrderStatus(orderId: string, status: string) {
       const { error } = await resend.emails.send({
         from: process.env.EMAIL_FROM,
         to: email,
-        subject: `Actualización del pedido ${order.numero} - Tornillería Jehová Jireh`,
-        html: `<p>Hola ${escapeHtml(order.clienteNombre || 'cliente')},</p><p>El estado de tu pedido <strong>${escapeHtml(order.numero)}</strong> cambió a <strong>${escapeHtml(orderStatusLabels[status])}</strong>.</p><p>Total: Q ${Number(order.total).toFixed(2)}</p><p>Gracias por comprar con Tornillería Jehová Jireh.</p>`,
+        subject: `Actualización del pedido ${order.numero} - TORNILLOS JEHOVA JIREH`,
+        html: `<p>Hola ${escapeHtml(order.clienteNombre || 'cliente')},</p><p>El estado de tu pedido <strong>${escapeHtml(order.numero)}</strong> cambió a <strong>${escapeHtml(orderStatusLabels[status])}</strong>.</p><p>Total: Q ${Number(order.total).toFixed(2)}</p><p>Gracias por comprar con TORNILLOS JEHOVA JIREH.</p>`,
       })
       if (error) {
         emailStatus = 'failed'

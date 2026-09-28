@@ -109,7 +109,7 @@ export function TornilleriaDashboard({
         <div className="mb-10 flex items-center justify-between px-2">
           <div className="flex items-center gap-3">
             <div className="flex size-10 items-center justify-center rounded-xl bg-primary text-primary-foreground"><span className="font-mono text-lg font-bold">TJ</span></div>
-            <div><p className="font-semibold tracking-tight">Tornilleria Jehova Jireh</p><p className="text-xs text-muted-foreground">Suministros industriales</p></div>
+            <div><p className="font-semibold tracking-tight">TORNILLOS JEHOVA JIREH</p><p className="text-xs text-muted-foreground">Suministros industriales</p></div>
           </div>
           <a href="/" className="mt-3 flex items-center gap-2 px-2 text-xs font-medium text-primary hover:underline">Ver tienda <ArrowUpRight className="size-3" /></a>
           <button onClick={() => setMobileOpen(false)} className="text-muted-foreground lg:hidden" aria-label="Cerrar menú"><X /></button>
@@ -260,7 +260,7 @@ export function TornilleriaDashboard({
                       {filteredOrders.length > 0 ? filteredOrders.map((order) => {
                         const currentStatus = orderStatuses[order.id] || order.status
                         const statusLabel = orderStatusLabels[currentStatus] || currentStatus
-                        const whatsappMessage = `Hola ${order.client}, te actualizamos sobre tu pedido ${order.number || order.id}: ${currentStatus === 'preparando' ? 'ya estamos preparando tu pedido' : currentStatus === 'enviado' ? 'tu pedido ya fue enviado' : `su estado es ${statusLabel.toLowerCase()}`}. - Tornillería Jehová Jireh.`
+                        const whatsappMessage = `Hola ${order.client}, te actualizamos sobre tu pedido ${order.number || order.id}: ${currentStatus === 'preparando' ? 'ya estamos preparando tu pedido' : currentStatus === 'enviado' ? 'tu pedido ya fue enviado' : `su estado es ${statusLabel.toLowerCase()}`}. - TORNILLOS JEHOVA JIREH.`
                         return (
                         <tr key={order.id} className="border-t border-border">
                           <td className="whitespace-nowrap px-6 py-4 font-medium">
@@ -482,7 +482,7 @@ export function TornilleriaDashboard({
                           <div className="mt-1 text-xs text-muted-foreground">{client.phone || 'Sin teléfono'}</div>
                           {client.phone ? (
                             <a
-                              href={`https://wa.me/${whatsappPhone(client.phone)}?text=${encodeURIComponent(`Hola ${client.name}, te contactamos de Tornillería Jehová Jireh.`)}`}
+                              href={`https://wa.me/${whatsappPhone(client.phone)}?text=${encodeURIComponent(`Hola ${client.name}, te contactamos de TORNILLOS JEHOVA JIREH.`)}`}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="mt-2 inline-block text-xs text-primary hover:underline"
@@ -604,7 +604,46 @@ export function TornilleriaDashboard({
       ) : null}
 
       {/* Modal de Configuración */}
-      {settingsOpen && <div className="fixed inset-0 z-50 bg-foreground/30" onClick={() => setSettingsOpen(false)}><div onClick={(e) => e.stopPropagation()} className="absolute right-0 top-0 flex h-full w-full max-w-md flex-col bg-card shadow-xl"><div className="flex items-center justify-between border-b border-border p-6"><div><h2 className="text-xl font-semibold">Configuración</h2><p className="text-sm text-muted-foreground">Ajustes de tu cuenta y sistema</p></div><button onClick={() => setSettingsOpen(false)} aria-label="Cerrar"><X /></button></div><div className="flex-1 p-6"><div className="space-y-6"><div><h3 className="font-medium mb-3">Información de la tienda</h3><div className="space-y-3"><div className="flex items-center justify-between"><span className="text-sm text-muted-foreground">Nombre</span><span className="text-sm font-medium">Tornilleria Jehova Jireh</span></div><div className="flex items-center justify-between"><span className="text-sm text-muted-foreground">Moneda</span><span className="text-sm font-medium">Quetzales (Q)</span></div><div className="flex items-center justify-between"><span className="text-sm text-muted-foreground">IVA</span><span className="text-sm font-medium">12%</span></div></div></div><div><h3 className="font-medium mb-3">Preferencias</h3><div className="space-y-3"><label className="flex items-center justify-between"><span className="text-sm">Notificaciones por email</span><input type="checkbox" defaultChecked className="rounded border-input" /></label><label className="flex items-center justify-between"><span className="text-sm">Alertas de stock bajo</span><input type="checkbox" defaultChecked className="rounded border-input" /></label></div></div><div className="rounded-lg bg-muted p-4"><p className="text-sm font-medium mb-2">Estado del sistema</p><p className="text-xs text-muted-foreground">Base de datos: <span className="text-destructive">No configurada</span></p><p className="text-xs text-muted-foreground mt-1">Autenticación: <span className="text-destructive">Deshabilitada temporalmente</span></p></div></div></div></div></div>}
+      {settingsOpen && (
+        <div className="fixed inset-0 z-50 bg-foreground/30" onClick={() => setSettingsOpen(false)}>
+          <div onClick={(event) => event.stopPropagation()} className="absolute right-0 top-0 flex h-full w-full max-w-md flex-col bg-card shadow-xl">
+            <div className="flex items-center justify-between border-b border-border p-6">
+              <div>
+                <h2 className="text-xl font-semibold">Configuración</h2>
+                <p className="text-sm text-muted-foreground">Ajustes de tu cuenta y sistema</p>
+              </div>
+              <button onClick={() => setSettingsOpen(false)} aria-label="Cerrar"><X /></button>
+            </div>
+            <div className="flex-1 p-6">
+              <div className="space-y-6">
+                <div>
+                  <h3 className="mb-3 font-medium">Información de la tienda</h3>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">Nombre</span>
+                      <span className="text-sm font-medium">TORNILLOS JEHOVA JIREH</span>
+                    </div>
+                    <div className="flex items-center justify-between"><span className="text-sm text-muted-foreground">Moneda</span><span className="text-sm font-medium">Quetzales (Q)</span></div>
+                    <div className="flex items-center justify-between"><span className="text-sm text-muted-foreground">IVA</span><span className="text-sm font-medium">12%</span></div>
+                  </div>
+                </div>
+                <div>
+                  <h3 className="mb-3 font-medium">Preferencias</h3>
+                  <div className="space-y-3">
+                    <label className="flex items-center justify-between"><span className="text-sm">Notificaciones por email</span><input type="checkbox" defaultChecked className="rounded border-input" /></label>
+                    <label className="flex items-center justify-between"><span className="text-sm">Alertas de stock bajo</span><input type="checkbox" defaultChecked className="rounded border-input" /></label>
+                  </div>
+                </div>
+                <div className="rounded-lg bg-muted p-4">
+                  <p className="mb-2 text-sm font-medium">Estado del sistema</p>
+                  <p className="text-xs text-muted-foreground">Base de datos: <span className="text-destructive">No configurada</span></p>
+                  <p className="mt-1 text-xs text-muted-foreground">Autenticación: <span className="text-destructive">Deshabilitada temporalmente</span></p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       
       {/* Modal de Notificaciones */}
       {notificationsOpen && <div className="fixed inset-0 z-50 bg-foreground/30" onClick={() => setNotificationsOpen(false)}><div onClick={(e) => e.stopPropagation()} className="absolute right-0 top-0 mt-[76px] flex h-[calc(100vh-76px)] w-full max-w-sm flex-col bg-card shadow-xl"><div className="flex items-center justify-between border-b border-border p-4"><h2 className="text-lg font-semibold">Notificaciones</h2><button onClick={() => setNotificationsOpen(false)} aria-label="Cerrar"><X /></button></div><div className="flex-1 overflow-y-auto p-4"><div className="space-y-3"><div className="rounded-lg border border-border bg-muted/50 p-3"><div className="flex items-start gap-3"><div className="flex size-8 items-center justify-center rounded-full bg-primary/10"><Bell className="size-4 text-primary" /></div><div><p className="text-sm font-medium">Nuevo pedido recibido</p><p className="text-xs text-muted-foreground mt-1">Pedido #ORD-2049 de Construcciones Álvarez</p><p className="text-xs text-muted-foreground mt-1">Hace 5 minutos</p></div></div></div><div className="rounded-lg border border-border bg-muted/50 p-3"><div className="flex items-start gap-3"><div className="flex size-8 items-center justify-center rounded-full bg-orange-500/10"><Box className="size-4 text-orange-500" /></div><div><p className="text-sm font-medium">Stock bajo</p><p className="text-xs text-muted-foreground mt-1">Tuerca autoblocante M10 tiene 84 unidades</p><p className="text-xs text-muted-foreground mt-1">Hace 1 hora</p></div></div></div><div className="rounded-lg border border-border bg-muted/50 p-3"><div className="flex items-start gap-3"><div className="flex size-8 items-center justify-center rounded-full bg-green-500/10"><CircleDollarSign className="size-4 text-green-500" /></div><div><p className="text-sm font-medium">Venta completada</p><p className="text-xs text-muted-foreground mt-1">Pedido #ORD-2048 entregado exitosamente</p><p className="text-xs text-muted-foreground mt-1">Hace 2 horas</p></div></div></div></div></div></div></div>}

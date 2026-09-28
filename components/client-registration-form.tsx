@@ -141,7 +141,7 @@ export function ClientRegistrationForm() {
         {loading ? 'Guardando...' : 'Registrarme'}
       </button>
       <p className="text-xs text-muted-foreground">
-        Al registrarte guardamos tus datos solo para pedidos, contacto y facturación de Tornilleria
+        Al registrarte guardamos tus datos solo para pedidos, contacto y facturación de TORNILLOS JEHOVA JIREH.
         Jehova Jireh.
       </p>
     </form>

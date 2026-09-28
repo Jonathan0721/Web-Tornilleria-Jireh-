@@ -33,7 +33,7 @@ export async function sendOrderConfirmationEmail(
     const { error } = await resend.emails.send({
       from: process.env.EMAIL_FROM || 'noreply@tornilleria.com',
       to,
-      subject: `Confirmación de Pedido #${orderNumber} - Tornilleria Jehova Jireh`,
+      subject: `Confirmación de Pedido #${orderNumber} - TORNILLOS JEHOVA JIREH`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h1 style="color: #333;">Confirmación de Pedido</h1>
@@ -45,7 +45,7 @@ export async function sendOrderConfirmationEmail(
           </ul>
           <p style="font-size: 18px; font-weight: bold;">Total: Q ${total.toFixed(2)}</p>
           <p>Gracias por tu compra. Te contactaremos pronto para coordinar el envío.</p>
-          <p style="color: #666; font-size: 14px;">Tornilleria Jehova Jireh</p>
+          <p style="color: #666; font-size: 14px;">TORNILLOS JEHOVA JIREH</p>
         </div>
       `,
     })
@@ -70,7 +70,7 @@ export async function sendNewOrderNotificationToAdmin(
     const { error } = await resend.emails.send({
       from: process.env.EMAIL_FROM || 'noreply@tornilleria.com',
       to: process.env.EMAIL_TO_ADMIN,
-      subject: `Nuevo Pedido #${orderNumber} - Tornilleria Jehova Jireh`,
+      subject: `Nuevo Pedido #${orderNumber} - TORNILLOS JEHOVA JIREH`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h1 style="color: #333;">Nuevo Pedido Recibido</h1>

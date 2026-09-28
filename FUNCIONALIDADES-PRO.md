@@ -1,4 +1,4 @@
-# Funcionalidades Profesionales - Tornilleria Jehova Jireh
+# Funcionalidades Profesionales - TORNILLOS JEHOVA JIREH
 
 Este documento describe las funcionalidades profesionales implementadas en el proyecto.
 

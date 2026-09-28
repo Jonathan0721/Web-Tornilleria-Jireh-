@@ -34,7 +34,7 @@ export function TornilleriaStore({ initialProducts = [] }: { initialProducts?: S
           <a href="/" className="flex min-h-[44px] min-w-0 shrink items-center gap-2 sm:gap-3">
             <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary font-mono font-bold text-primary-foreground">TJ</span>
             <span className="min-w-0">
-              <strong className="block truncate text-sm tracking-tight sm:text-base">Tornilleria Jehova Jireh</strong>
+              <strong className="block truncate text-sm tracking-tight sm:text-base">TORNILLOS JEHOVA JIREH</strong>
               <small className="hidden text-xs text-muted-foreground sm:block">Suministros industriales</small>
             </span>
           </a>
@@ -78,7 +78,7 @@ export function TornilleriaStore({ initialProducts = [] }: { initialProducts?: S
             <h1 className="max-w-2xl text-3xl font-semibold tracking-tight sm:text-4xl md:text-6xl">Todo lo que necesitas para fijar bien.</h1>
             <p className="mt-4 max-w-xl text-sm leading-7 text-muted-foreground sm:mt-5 sm:text-base">Tornillería industrial de calidad, lista para taller u obra.</p>
             <a
-              href={`https://wa.me/50256125894?text=${encodeURIComponent('Hola, quiero realizar una cotización desde el catálogo de Tornilleria Jehova Jireh.')}`}
+              href={`https://wa.me/50256125894?text=${encodeURIComponent('Hola, quiero realizar una cotización desde el catálogo de TORNILLOS JEHOVA JIREH.')}`}
               target="_blank"
               rel="noopener noreferrer"
               className="mt-5 inline-flex min-h-[48px] items-center gap-2 rounded-lg bg-primary px-5 py-3 text-sm font-medium text-primary-foreground sm:mt-7"
