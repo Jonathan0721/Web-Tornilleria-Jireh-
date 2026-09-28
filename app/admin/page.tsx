@@ -25,8 +25,23 @@ export default async function AdminPage() {
     category: product.categoria,
     price: product.precio,
     stock: product.stock,
-    tipo: product.tipo ?? undefined,
-    medidas: product.medidas ?? undefined,
+    stockMinimum: product.stockMinimo,
+    unit: product.unidad,
+    tipo: product.tipo || '',
+    medidas: product.medidas || '',
+    description: product.descripcion || '',
+    detailedDescription: product.descripcionDetallada || '',
+    image: product.imagen || '',
+    active: product.activo,
+    showSku: product.mostrarSku,
+    showCategory: product.mostrarCategoria,
+    showPrice: product.mostrarPrecio,
+    showStock: product.mostrarStock,
+    showTipo: product.mostrarTipo,
+    showMeasures: product.mostrarMedidas,
+    showDescription: product.mostrarDescripcion,
+    showDetailedDescription: product.mostrarDescripcionDetallada,
+    showImage: product.mostrarImagen,
   }))
 
   const allOrders = await getOrders()
@@ -42,7 +57,7 @@ export default async function AdminPage() {
   }))
 
   const lowStockProducts = inventoryRows
-    .filter((product) => product.stock < product.stockMinimo)
+    .filter((product) => product.activo && product.stock < product.stockMinimo)
     .map((product) => ({
       name: product.nombre,
       sku: product.sku,
@@ -55,7 +70,7 @@ export default async function AdminPage() {
   const stats = {
     sales: { value: 0, change: '+0%' }, // Calcular desde pedidos completados
     orders: { value: allOrders.length, change: '+0%' },
-    products: { value: inventoryRows.length, change: '+0' },
+    products: { value: inventoryRows.filter((product) => product.activo).length, change: '+0' },
     clients: { value: totalClients[0]?.count || 0, change: '+0' }
   }
 

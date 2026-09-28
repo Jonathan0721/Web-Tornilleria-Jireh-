@@ -2,7 +2,8 @@
 
 import { useState, useTransition } from 'react'
 import { signOut } from '@/lib/auth-client'
-import { createProduct, updateProduct, deleteProduct } from '@/app/actions/inventory'
+import { createProduct, updateProduct, setProductActive } from '@/app/actions/inventory'
+import { ProductImageField } from '@/components/product-image-field'
 import type { getOrderById as GetOrderById, updateOrderStatus as UpdateOrderStatus } from '@/app/actions/orders'
 import { 
   House, ClipboardList, PackageSearch, Box, Users, Settings, 
@@ -27,7 +28,31 @@ const orderStatusLabels: Record<string, string> = {
   cancelado: 'Cancelado',
 }
 
-type InventoryItem = { id: string; name: string; sku: string; category: string; price: string; stock: number; tipo?: string; medidas?: string }
+type InventoryItem = {
+  id: string
+  name: string
+  sku: string
+  category: string
+  price: string
+  stock: number
+  stockMinimum: number
+  unit: string
+  tipo: string
+  medidas: string
+  description: string
+  detailedDescription: string
+  image: string
+  active: boolean
+  showSku: boolean
+  showCategory: boolean
+  showPrice: boolean
+  showStock: boolean
+  showTipo: boolean
+  showMeasures: boolean
+  showDescription: boolean
+  showDetailedDescription: boolean
+  showImage: boolean
+}
 type DashboardStats = { sales: { value: number; change: string }; orders: { value: number; change: string }; products: { value: number; change: string }; clients: { value: number; change: string } }
 type RecentOrder = { id: string; number?: string; client: string; date: string; amount: string; status: string; phone?: string; email?: string }
 type OrderDetail = NonNullable<Awaited<ReturnType<typeof GetOrderById>>>
@@ -64,6 +89,9 @@ export function TornilleriaDashboard({
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [notificationsOpen, setNotificationsOpen] = useState(false)
   const [tipoFilter, setTipoFilter] = useState('todos')
+  const [selectedInventory, setSelectedInventory] = useState<InventoryItem | null>(null)
+  const [editingInventory, setEditingInventory] = useState(false)
+  const [inventoryError, setInventoryError] = useState('')
   const [orderStatuses, setOrderStatuses] = useState<Record<string, string>>({})
   const [orderNotices, setOrderNotices] = useState<Record<string, string>>({})
   const [orderSearch, setOrderSearch] = useState('')
@@ -358,17 +386,34 @@ export function TornilleriaDashboard({
                     <p className="mt-1 text-sm text-muted-foreground">Agrega y edita productos</p>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    {['todos', 'galvanizado', 'grado5', 'grado8', 'seguridad', 'acero_inoxidable', 'zincado'].map((tipo) => (
+                    {['todos', ...new Set([...inventory.map((item) => item.tipo).filter(Boolean), 'galvanizado', 'grado5', 'grado8', 'seguridad', 'acero_inoxidable', 'zincado'])].map((tipo) => (
                       <button
                         key={tipo}
                         onClick={() => setTipoFilter(tipo)}
                         className={`px-3 py-1.5 text-xs rounded-full min-h-[44px] cursor-pointer ${tipoFilter === tipo ? 'bg-primary text-primary-foreground' : 'border border-input text-muted-foreground hover:bg-muted active:bg-muted/80 transition-colors'}`}
                       >
-                        {tipo === 'todos' ? 'Todos' : tipo === 'galvanizado' ? 'Galvanizado' : tipo === 'grado5' ? 'Grado 5' : tipo === 'grado8' ? 'Grado 8' : tipo === 'seguridad' ? 'Seguridad' : tipo === 'acero_inoxidable' ? 'Inoxidable' : 'Zincado'}
+                        {tipo === 'todos' ? 'Todos' : tipo === 'galvanizado' ? 'Galvanizado' : tipo === 'grado5' ? 'Grado 5' : tipo === 'grado8' ? 'Grado 8' : tipo === 'seguridad' ? 'Seguridad' : tipo === 'acero_inoxidable' ? 'Inoxidable' : tipo === 'zincado' ? 'Zincado' : tipo}
                       </button>
                     ))}
                   </div>
-                  <form action={(formData) => { startTransition(async () => { await createProduct(formData); window.location.reload() }) }} className="flex flex-col gap-3 w-full">
+                  <form onSubmit={(event) => {
+                    event.preventDefault()
+                    const formData = new FormData(event.currentTarget)
+                    setInventoryError('')
+                    if (formData.get('imagenSubiendo')) {
+                      setInventoryError('Espera a que termine de subir la imagen antes de guardar.')
+                      return
+                    }
+                    startTransition(async () => {
+                      try {
+                        await createProduct(formData)
+                        window.location.reload()
+                      } catch (error) {
+                        setInventoryError(error instanceof Error ? error.message : 'No se pudo agregar el producto')
+                      }
+                    })
+                  }} className="flex flex-col gap-3 w-full">
+                    {inventoryError && !selectedInventory && <p role="alert" className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">{inventoryError}</p>}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                       <input name="name" required placeholder="Nombre del producto" className="h-9 rounded-md border border-input bg-background px-3 text-sm" />
                       <input name="sku" required placeholder="SKU" className="h-9 rounded-md border border-input bg-background px-3 text-sm" />
@@ -386,7 +431,7 @@ export function TornilleriaDashboard({
                       </select>
                     </div>
                     <input name="medidas" placeholder="Medidas (ej: M8 x 40, 1/2-13)" className="h-9 rounded-md border border-input bg-background px-3 text-sm" />
-                    <input name="imagen" placeholder="URL de imagen (opcional)" className="h-9 rounded-md border border-input bg-background px-3 text-sm" />
+                    <ProductImageField />
                     <textarea name="descripcion" placeholder="Descripción corta" className="h-20 rounded-md border border-input bg-background px-3 text-sm resize-none" />
                     <textarea name="descripcionDetallada" placeholder="Descripción detallada (especificaciones técnicas)" className="h-24 rounded-md border border-input bg-background px-3 text-sm resize-none" />
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
@@ -394,6 +439,27 @@ export function TornilleriaDashboard({
                       <input name="stock" required type="number" min="0" step="1" placeholder="Stock" className="h-9 rounded-md border border-input bg-background px-3 text-sm" />
                       <input name="unidad" required placeholder="Unidad" className="h-9 rounded-md border border-input bg-background px-3 text-sm" />
                     </div>
+                    <input name="stockMinimo" type="number" min="0" step="1" defaultValue="5" placeholder="Stock mínimo" className="h-9 rounded-md border border-input bg-background px-3 text-sm" />
+                    <fieldset className="rounded-lg border border-border p-3">
+                      <legend className="px-1 text-sm font-medium">Información visible para clientes</legend>
+                      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                        {[
+                          ['mostrarImagen', 'Imagen'],
+                          ['mostrarSku', 'Código / SKU'],
+                          ['mostrarCategoria', 'Categoría'],
+                          ['mostrarPrecio', 'Precio en catálogo y ficha'],
+                          ['mostrarStock', 'Cantidad disponible'],
+                          ['mostrarTipo', 'Tipo'],
+                          ['mostrarMedidas', 'Medidas'],
+                          ['mostrarDescripcion', 'Descripción corta'],
+                          ['mostrarDescripcionDetallada', 'Detalles técnicos'],
+                        ].map(([field, label]) => (
+                          <label key={field} className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <input type="checkbox" name={field} defaultChecked className="size-4" /> {label}
+                          </label>
+                        ))}
+                      </div>
+                    </fieldset>
                     <button disabled={isPending} className="w-full h-10 min-h-[44px] rounded-md bg-primary px-3 text-sm font-medium text-primary-foreground hover:opacity-90 active:opacity-80 transition-opacity cursor-pointer">
                       {isPending ? 'Guardando...' : 'Agregar producto'}
                     </button>
@@ -414,38 +480,143 @@ export function TornilleriaDashboard({
                     </thead>
                     <tbody>
                       {inventory.filter(item => tipoFilter === 'todos' || item.tipo === tipoFilter).map((item) => (
-                        <tr key={item.id} className="border-b border-border last:border-0">
-                          <td className="py-3 font-medium">{item.name}</td>
+                        <tr key={item.id} className={`border-b border-border last:border-0 ${item.active ? '' : 'opacity-60'}`}>
+                          <td className="py-3 font-medium">
+                            <button type="button" onClick={() => { setSelectedInventory(item); setEditingInventory(false); setInventoryError('') }} className="text-left hover:text-primary hover:underline">
+                              {item.name}
+                            </button>
+                            {!item.active && <span className="ml-2 text-xs text-muted-foreground">Inactivo</span>}
+                          </td>
                           <td className="py-3 text-muted-foreground">{item.sku}</td>
                           <td className="py-3 text-xs text-muted-foreground">{item.tipo || '-'}</td>
                           <td className="py-3 text-xs text-muted-foreground">{item.medidas || '-'}</td>
-                          <td className="py-3">
-                            <form action={(fd) => { startTransition(async () => { await updateProduct(item.id, fd); window.location.reload() }) }} className="flex items-center gap-2">
-                              <input name="price" defaultValue={item.price} type="number" min="0" step="0.01" className="w-20 sm:w-24 rounded border border-input bg-background px-2 text-sm" />
-                              <button disabled={isPending} className="rounded bg-primary px-2 py-1.5 min-h-[44px] text-xs text-primary-foreground hover:opacity-90 active:opacity-80 transition-opacity cursor-pointer">
-                                {isPending ? '...' : 'Guardar'}
-                              </button>
-                            </form>
-                          </td>
-                          <td className="py-3">
-                            <form action={(fd) => { startTransition(async () => { await updateProduct(item.id, fd); window.location.reload() }) }} className="flex items-center gap-2">
-                              <input name="stock" defaultValue={item.stock} type="number" min="0" step="1" className="w-16 sm:w-20 rounded border border-input bg-background px-2 text-sm" />
-                              <button disabled={isPending} className="rounded bg-primary px-2 py-1.5 min-h-[44px] text-xs text-primary-foreground hover:opacity-90 active:opacity-80 transition-opacity cursor-pointer">
-                                {isPending ? '...' : 'Guardar'}
-                              </button>
-                            </form>
-                          </td>
+                          <td className="py-3">{`Q ${Number(item.price).toFixed(2)}`}</td>
+                          <td className="py-3">{item.stock} {item.unit}</td>
                           <td className="py-3 text-right">
-                            <button onClick={() => { if (confirm('¿Eliminar este producto?')) startTransition(async () => { await deleteProduct(item.id); window.location.reload() }) }} className="text-destructive hover:underline text-xs px-2 py-1.5 min-h-[44px] cursor-pointer">
-                              Eliminar
+                            <button type="button" onClick={() => { setSelectedInventory(item); setEditingInventory(true); setInventoryError('') }} className="text-primary hover:underline text-xs px-2 py-1.5 min-h-[44px] cursor-pointer">
+                              Editar
+                            </button>
+                            <button onClick={() => { if (confirm(item.active ? '¿Desactivar este producto del catálogo?' : '¿Reactivar este producto?')) startTransition(async () => {
+                              try {
+                                await setProductActive(item.id, !item.active)
+                                window.location.reload()
+                              } catch (error) {
+                                setInventoryError(error instanceof Error ? error.message : 'No se pudo actualizar el producto')
+                              }
+                            }) }} className="text-muted-foreground hover:underline text-xs px-2 py-1.5 min-h-[44px] cursor-pointer">
+                              {item.active ? 'Desactivar' : 'Reactivar'}
                             </button>
                           </td>
                         </tr>
                       ))}
+                      {!inventory.length && (
+                        <tr><td colSpan={7} className="py-8 text-center text-muted-foreground">Todavía no hay productos. Agrégalos con el formulario anterior.</td></tr>
+                      )}
                     </tbody>
                   </table>
                 </div>
               </section>
+              {selectedInventory && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" role="dialog" aria-modal="true" aria-label={editingInventory ? 'Editar producto' : 'Detalle del producto'}>
+                  <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-xl border border-border bg-card p-5 shadow-xl sm:p-7">
+                    <div className="mb-5 flex items-start justify-between gap-4">
+                      <div>
+                        <h2 className="text-xl font-semibold">{editingInventory ? 'Editar producto' : selectedInventory.name}</h2>
+                        <p className="mt-1 text-sm text-muted-foreground">Código: {selectedInventory.sku}</p>
+                      </div>
+                      <button type="button" onClick={() => setSelectedInventory(null)} aria-label="Cerrar" className="rounded p-2 hover:bg-muted"><X className="size-5" /></button>
+                    </div>
+                    {inventoryError && <p role="alert" className="mb-4 rounded-md bg-destructive/10 p-3 text-sm text-destructive">{inventoryError}</p>}
+                    {!editingInventory ? (
+                      <div className="space-y-4">
+                        {selectedInventory.image && <img src={selectedInventory.image} alt={selectedInventory.name} className="max-h-56 w-full rounded-lg bg-muted object-contain" />}
+                        <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                          <div><dt className="text-xs text-muted-foreground">Categoría</dt><dd>{selectedInventory.category}</dd></div>
+                          <div><dt className="text-xs text-muted-foreground">Precio</dt><dd>Q {Number(selectedInventory.price).toFixed(2)} / {selectedInventory.unit}</dd></div>
+                          <div><dt className="text-xs text-muted-foreground">Tipo</dt><dd>{selectedInventory.tipo || 'Sin especificar'}</dd></div>
+                          <div><dt className="text-xs text-muted-foreground">Medidas</dt><dd>{selectedInventory.medidas || 'Sin especificar'}</dd></div>
+                          <div><dt className="text-xs text-muted-foreground">Existencias</dt><dd>{selectedInventory.stock} {selectedInventory.unit} (mínimo: {selectedInventory.stockMinimum})</dd></div>
+                          <div><dt className="text-xs text-muted-foreground">Estado</dt><dd>{selectedInventory.active ? 'Activo en catálogo' : 'Inactivo'}</dd></div>
+                        </dl>
+                        <div>
+                          <h3 className="text-sm font-medium">Visibilidad en la tienda</h3>
+                          <p className="mt-1 text-sm text-muted-foreground">
+                            {[
+                              selectedInventory.showImage && 'imagen',
+                              selectedInventory.showSku && 'código',
+                              selectedInventory.showCategory && 'categoría',
+                              selectedInventory.showPrice && 'precio',
+                              selectedInventory.showStock && 'stock',
+                              selectedInventory.showTipo && 'tipo',
+                              selectedInventory.showMeasures && 'medidas',
+                              selectedInventory.showDescription && 'descripción',
+                              selectedInventory.showDetailedDescription && 'detalles técnicos',
+                            ].filter(Boolean).join(', ') || 'Sin información adicional visible'}
+                          </p>
+                        </div>
+                        <div><h3 className="text-sm font-medium">Descripción</h3><p className="mt-1 whitespace-pre-line text-sm text-muted-foreground">{selectedInventory.description || 'Sin descripción'}</p></div>
+                        <div><h3 className="text-sm font-medium">Detalles técnicos</h3><p className="mt-1 whitespace-pre-line text-sm text-muted-foreground">{selectedInventory.detailedDescription || 'Sin detalles técnicos'}</p></div>
+                        <button type="button" onClick={() => setEditingInventory(true)} className="min-h-[44px] rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground">Editar producto</button>
+                      </div>
+                    ) : (
+                      <form onSubmit={(event) => {
+                        event.preventDefault()
+                        const formData = new FormData(event.currentTarget)
+                        if (formData.get('imagenSubiendo')) {
+                          setInventoryError('Espera a que termine de subir la imagen antes de guardar.')
+                          return
+                        }
+                        startTransition(async () => {
+                          try {
+                            await updateProduct(selectedInventory.id, formData)
+                            window.location.reload()
+                          } catch (error) {
+                            setInventoryError(error instanceof Error ? error.message : 'No se pudo guardar el producto')
+                          }
+                        })
+                      }} className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        <label className="text-sm">Nombre<input name="name" required maxLength={200} defaultValue={selectedInventory.name} className="mt-1 h-10 w-full rounded-md border border-input bg-background px-3" /></label>
+                        <label className="text-sm">Código / SKU<input name="sku" required maxLength={50} defaultValue={selectedInventory.sku} className="mt-1 h-10 w-full rounded-md border border-input bg-background px-3" /></label>
+                        <label className="text-sm">Categoría<input name="category" required maxLength={50} defaultValue={selectedInventory.category} className="mt-1 h-10 w-full rounded-md border border-input bg-background px-3" /></label>
+                        <label className="text-sm">Tipo<input name="tipo" maxLength={30} defaultValue={selectedInventory.tipo} className="mt-1 h-10 w-full rounded-md border border-input bg-background px-3" /></label>
+                        <label className="text-sm">Medidas<input name="medidas" maxLength={50} defaultValue={selectedInventory.medidas} className="mt-1 h-10 w-full rounded-md border border-input bg-background px-3" /></label>
+                        <ProductImageField key={selectedInventory.id} initialUrl={selectedInventory.image} />
+                        <label className="text-sm">Precio (Q)<input name="price" required type="number" min="0" step="0.01" defaultValue={selectedInventory.price} className="mt-1 h-10 w-full rounded-md border border-input bg-background px-3" /></label>
+                        <label className="text-sm">Existencias<input name="stock" required type="number" min="0" step="1" defaultValue={selectedInventory.stock} className="mt-1 h-10 w-full rounded-md border border-input bg-background px-3" /></label>
+                        <label className="text-sm">Stock mínimo<input name="stockMinimo" required type="number" min="0" step="1" defaultValue={selectedInventory.stockMinimum} className="mt-1 h-10 w-full rounded-md border border-input bg-background px-3" /></label>
+                        <label className="text-sm">Unidad<input name="unidad" required maxLength={20} defaultValue={selectedInventory.unit} className="mt-1 h-10 w-full rounded-md border border-input bg-background px-3" /></label>
+                        <label className="text-sm sm:col-span-2">Descripción corta<textarea name="descripcion" maxLength={500} defaultValue={selectedInventory.description} className="mt-1 min-h-20 w-full rounded-md border border-input bg-background p-3" /></label>
+                        <label className="text-sm sm:col-span-2">Descripción detallada / especificaciones<textarea name="descripcionDetallada" maxLength={2000} defaultValue={selectedInventory.detailedDescription} className="mt-1 min-h-28 w-full rounded-md border border-input bg-background p-3" /></label>
+                        <label className="flex min-h-11 items-center gap-2 text-sm sm:col-span-2"><input type="checkbox" name="activo" defaultChecked={selectedInventory.active} className="size-4" /> Disponible en el catálogo de clientes</label>
+                        <fieldset className="rounded-lg border border-border p-3 sm:col-span-2">
+                          <legend className="px-1 text-sm font-medium">Información visible para clientes</legend>
+                          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                            {[
+                              ['mostrarImagen', 'Imagen', selectedInventory.showImage],
+                              ['mostrarSku', 'Código / SKU', selectedInventory.showSku],
+                              ['mostrarCategoria', 'Categoría', selectedInventory.showCategory],
+                              ['mostrarPrecio', 'Precio en catálogo y ficha', selectedInventory.showPrice],
+                              ['mostrarStock', 'Cantidad disponible', selectedInventory.showStock],
+                              ['mostrarTipo', 'Tipo', selectedInventory.showTipo],
+                              ['mostrarMedidas', 'Medidas', selectedInventory.showMeasures],
+                              ['mostrarDescripcion', 'Descripción corta', selectedInventory.showDescription],
+                              ['mostrarDescripcionDetallada', 'Detalles técnicos', selectedInventory.showDetailedDescription],
+                            ].map(([field, label, checked]) => (
+                              <label key={String(field)} className="flex items-center gap-2 text-sm text-muted-foreground">
+                                <input type="checkbox" name={String(field)} defaultChecked={Boolean(checked)} className="size-4" /> {String(label)}
+                              </label>
+                            ))}
+                          </div>
+                        </fieldset>
+                        <div className="flex gap-2 sm:col-span-2">
+                          <button type="button" onClick={() => setEditingInventory(false)} className="min-h-[44px] rounded-md border border-input px-4 text-sm">Cancelar</button>
+                          <button disabled={isPending} className="min-h-[44px] rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground">{isPending ? 'Guardando...' : 'Guardar cambios'}</button>
+                        </div>
+                      </form>
+                    )}
+                  </div>
+                </div>
+              )}
             </>
           )}
 

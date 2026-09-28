@@ -17,15 +17,34 @@ const products = [
 
 const money = (value: number) => new Intl.NumberFormat('es-GT', { style: 'currency', currency: 'GTQ' }).format(value)
 
-type StoreProduct = { id: string; name: string; category: string; price: number; stock: number; unit: string; imagen?: string; tipo?: string; medidas?: string; descripcion?: string }
+type StoreProduct = {
+  id: string
+  name: string
+  category: string
+  price: number
+  stock: number
+  unit: string
+  imagen?: string | null
+  tipo?: string | null
+  medidas?: string | null
+  descripcion?: string | null
+  mostrarSku?: boolean
+  mostrarCategoria?: boolean
+  mostrarPrecio?: boolean
+  mostrarStock?: boolean
+  mostrarTipo?: boolean
+  mostrarMedidas?: boolean
+  mostrarDescripcion?: boolean
+  mostrarImagen?: boolean
+}
 
 export function TornilleriaStore({ initialProducts = [] }: { initialProducts?: StoreProduct[] }) {
-  const catalogProducts = initialProducts.length ? initialProducts : products
+  const catalogProducts: StoreProduct[] = initialProducts.length ? initialProducts : products
   const { addToCart } = useCart()
   const [query, setQuery] = useState('')
   const [category, setCategory] = useState('Todos')
-  const categories = ['Todos', 'Tornillos', 'Tuercas', 'Arandelas', 'Kits']
-  const visible = catalogProducts.filter((p) => (category === 'Todos' || p.category === category) && p.name.toLowerCase().includes(query.toLowerCase()))
+  const categories = ['Todos', ...new Set(catalogProducts.filter((product) => product.mostrarCategoria !== false).map((product) => product.category).filter(Boolean))]
+  const visible = catalogProducts.filter((p) => (category === 'Todos' || p.category === category) && `${p.name} ${p.id} ${p.descripcion || ''}`.toLowerCase().includes(query.toLowerCase()))
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -128,29 +147,40 @@ export function TornilleriaStore({ initialProducts = [] }: { initialProducts?: S
                 className="rounded-xl border border-border bg-card p-4 sm:p-5"
               >
                 <Link href={`/producto/${p.id}`} className="block">
-                  <div className="flex aspect-[1.6] items-center justify-center overflow-hidden rounded-lg bg-muted sm:aspect-[1.5]">
-                    {p.imagen ? (
-                      <img src={p.imagen} alt={p.name} className="h-full w-full object-contain" />
-                    ) : (
-                      <div className="h-3 w-28 rotate-[-18deg] rounded-full bg-primary/80 shadow-[0_6px_0_#9ca3af] sm:w-32" />
-                    )}
-                  </div>
+                  {p.mostrarImagen !== false && (
+                    <div className="flex aspect-[1.6] items-center justify-center overflow-hidden rounded-lg bg-muted sm:aspect-[1.5]">
+                      {p.imagen ? (
+                        <img src={p.imagen} alt={p.name} className="h-full w-full object-contain" />
+                      ) : (
+                        <div className="h-3 w-28 rotate-[-18deg] rounded-full bg-primary/80 shadow-[0_6px_0_#9ca3af] sm:w-32" />
+                      )}
+                    </div>
+                  )}
                   <div className="mt-4 flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="text-xs text-muted-foreground">{p.category} · {p.id}</p>
+                      {(p.mostrarCategoria !== false || p.mostrarSku !== false) && (
+                        <p className="text-xs text-muted-foreground">
+                          {p.mostrarCategoria !== false ? p.category : ''}
+                          {p.mostrarCategoria !== false && p.mostrarSku !== false ? ' · ' : ''}
+                          {p.mostrarSku !== false ? p.id : ''}
+                        </p>
+                      )}
                       <h3 className="mt-1 text-sm font-medium leading-5 sm:text-base sm:leading-6">{p.name}</h3>
-                      {p.medidas ? <p className="mt-1 text-xs text-muted-foreground">{p.medidas}</p> : null}
+                      {p.mostrarMedidas !== false && p.medidas ? <p className="mt-1 text-xs text-muted-foreground">{p.medidas}</p> : null}
+                      {p.mostrarDescripcion !== false && p.descripcion ? <p className="mt-2 line-clamp-2 text-xs text-muted-foreground">{p.descripcion}</p> : null}
                     </div>
-                    <p className="shrink-0 text-right font-semibold">
+                    {p.mostrarPrecio !== false && <p className="shrink-0 text-right font-semibold">
                       {money(p.price)}
                       <span className="block text-xs font-normal text-muted-foreground">/ {p.unit}</span>
-                    </p>
+                    </p>}
                   </div>
                 </Link>
                 <div className="mt-4 flex items-center justify-between gap-3">
-                  <span className={`text-xs ${p.stock > 10 ? 'text-green-600' : p.stock > 0 ? 'text-orange-600' : 'text-red-600'}`}>
-                    {p.stock > 0 ? `${p.stock} disponibles` : 'Agotado'}
-                  </span>
+                  {p.mostrarStock !== false
+                    ? <span className={`text-xs ${p.stock > 10 ? 'text-green-600' : p.stock > 0 ? 'text-orange-600' : 'text-red-600'}`}>
+                        {p.stock > 0 ? `${p.stock} disponibles` : 'Agotado'}
+                      </span>
+                    : <span />}
                   <button
                     onClick={() => addToCart(p, 1)}
                     disabled={p.stock === 0}

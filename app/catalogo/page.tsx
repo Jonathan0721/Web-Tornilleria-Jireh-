@@ -20,7 +20,17 @@ export default async function CatalogoPage() {
     tipo: p.tipo,
     medidas: p.medidas,
     descripcion: p.descripcion,
-    imagen: p.imagen
+    descripcionDetallada: p.descripcionDetallada,
+    imagen: p.imagen,
+    mostrarSku: p.mostrarSku,
+    mostrarCategoria: p.mostrarCategoria,
+    mostrarPrecio: p.mostrarPrecio,
+    mostrarStock: p.mostrarStock,
+    mostrarTipo: p.mostrarTipo,
+    mostrarMedidas: p.mostrarMedidas,
+    mostrarDescripcion: p.mostrarDescripcion,
+    mostrarDescripcionDetallada: p.mostrarDescripcionDetallada,
+    mostrarImagen: p.mostrarImagen
   }))
   
   return <TornilleriaStore initialProducts={initialProducts} />

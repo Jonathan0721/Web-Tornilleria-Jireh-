@@ -1,13 +1,17 @@
 'use client'
 
 import { useState } from 'react'
-import { ArrowLeft, ShoppingCart, Plus, Minus, Truck, ShieldCheck, Award, Package } from 'lucide-react'
+import { ArrowLeft, ShoppingCart, Plus, Minus, Package } from 'lucide-react'
 import Link from 'next/link'
 import { useCart } from '@/lib/cart-context'
 import { IosToast } from './ios-toast'
 import { CartPreview } from './cart-preview'
+import type { InferSelectModel } from 'drizzle-orm'
+import type { inventario } from '@/lib/db/schema'
 
-export default function TornilleriaProductDetail({ product }: { product: any }) {
+type Product = InferSelectModel<typeof inventario>
+
+export default function TornilleriaProductDetail({ product }: { product: Product }) {
   const [quantity, setQuantity] = useState(1)
   const [showToast, setShowToast] = useState(false)
   const { addToCart } = useCart()
@@ -17,7 +21,7 @@ export default function TornilleriaProductDetail({ product }: { product: any }) 
   const handleAddToCart = () => {
     try {
       console.log('[ProductDetail] Adding to cart:', { product, quantity })
-      addToCart(product, quantity)
+      addToCart({ ...product, id: product.sku }, quantity)
       setShowToast(true)
     } catch (error) {
       console.error('[ProductDetail] Error adding to cart:', error)
@@ -54,7 +58,7 @@ export default function TornilleriaProductDetail({ product }: { product: any }) 
         
         <div className="grid gap-6 lg:gap-8 lg:grid-cols-2">
           {/* Imagen del producto */}
-          <div className="aspect-square rounded-2xl border border-border bg-muted flex items-center justify-center overflow-hidden">
+          {product.mostrarImagen && <div className="aspect-square rounded-2xl border border-border bg-muted flex items-center justify-center overflow-hidden">
             {product.imagen ? (
               <img 
                 src={product.imagen} 
@@ -67,39 +71,39 @@ export default function TornilleriaProductDetail({ product }: { product: any }) 
                 <p className="text-sm">Imagen no disponible</p>
               </div>
             )}
-          </div>
+          </div>}
           
           {/* Información del producto */}
           <div className="flex flex-col">
             <div className="mb-4">
-              <span className="inline-block rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
-                {product.categoria || product.category}
-              </span>
+              {product.mostrarCategoria && <span className="inline-block rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
+                {product.categoria}
+              </span>}
             </div>
             
-            <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight mb-2">{product.nombre || product.name}</h1>
-            <p className="text-sm sm:text-lg text-muted-foreground mb-4">SKU: {product.sku || product.id}</p>
+            <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight mb-2">{product.nombre}</h1>
+            {product.mostrarSku && <p className="text-sm sm:text-lg text-muted-foreground mb-4">SKU: {product.sku}</p>}
             
-            {product.tipo && (
+            {product.mostrarTipo && product.tipo && (
               <div className="mb-4">
                 <span className="text-sm font-medium">Tipo: </span>
                 <span className="text-sm text-muted-foreground">{tipoLabels[product.tipo] || product.tipo}</span>
               </div>
             )}
             
-            {product.medidas && (
+            {product.mostrarMedidas && product.medidas && (
               <div className="mb-4">
                 <span className="text-sm font-medium">Medidas: </span>
                 <span className="text-sm text-muted-foreground">{product.medidas}</span>
               </div>
             )}
             
-            <div className="mb-6">
-              <p className="text-3xl sm:text-4xl font-semibold tracking-tight">{money(Number(product.precio || product.price))}</p>
-              <p className="text-xs sm:text-sm text-muted-foreground">por {product.unidad || product.unit}</p>
-            </div>
+            {product.mostrarPrecio && <div className="mb-6">
+              <p className="text-3xl sm:text-4xl font-semibold tracking-tight">{money(Number(product.precio))}</p>
+              <p className="text-xs sm:text-sm text-muted-foreground">por {product.unidad}</p>
+            </div>}
             
-            {product.descripcion && (
+            {product.mostrarDescripcion && product.descripcion && (
               <p className="text-muted-foreground mb-6">{product.descripcion}</p>
             )}
             
@@ -132,50 +136,24 @@ export default function TornilleriaProductDetail({ product }: { product: any }) 
               </button>
             </div>
             
-            <div className="mb-8">
+            {product.mostrarStock && <div className="mb-8">
               <p className="text-sm font-medium mb-2">Disponibilidad: </p>
               <p className={`text-sm ${product.stock > 10 ? 'text-green-600' : product.stock > 0 ? 'text-orange-600' : 'text-red-600'}`}>
                 {product.stock > 10 ? `${product.stock} unidades disponibles` : product.stock > 0 ? `Solo ${product.stock} unidades disponibles` : 'Agotado'}
               </p>
-            </div>
+            </div>}
             
-            {/* Características */}
             <div className="rounded-xl border border-border bg-card p-4 sm:p-6 mb-6">
-              <h3 className="font-semibold mb-4">Características</h3>
-              <div className="grid grid-cols-2 gap-3 sm:gap-4">
-                <div className="flex items-center gap-2 sm:gap-3">
-                  <ShieldCheck className="size-4 sm:size-5 text-primary shrink-0" />
-                  <div>
-                    <p className="text-xs sm:text-sm font-medium">Alta calidad</p>
-                    <p className="text-xs text-muted-foreground">Certificado ISO</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 sm:gap-3">
-                  <Truck className="size-4 sm:size-5 text-primary shrink-0" />
-                  <div>
-                    <p className="text-xs sm:text-sm font-medium">Envío rápido</p>
-                    <p className="text-xs text-muted-foreground">24-48 horas</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 sm:gap-3">
-                  <Award className="size-4 sm:size-5 text-primary shrink-0" />
-                  <div>
-                    <p className="text-xs sm:text-sm font-medium">Garantía</p>
-                    <p className="text-xs text-muted-foreground">30 días</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 sm:gap-3">
-                  <Package className="size-4 sm:size-5 text-primary shrink-0" />
-                  <div>
-                    <p className="text-xs sm:text-sm font-medium">Empaque seguro</p>
-                    <p className="text-xs text-muted-foreground">Protegido</p>
-                  </div>
-                </div>
-              </div>
+              <h3 className="font-semibold mb-3">Información del producto</h3>
+              <dl className="grid grid-cols-1 gap-2 text-sm sm:grid-cols-2">
+                {product.mostrarCategoria && <div><dt className="inline font-medium">Categoría: </dt><dd className="inline text-muted-foreground">{product.categoria}</dd></div>}
+                {product.mostrarSku && <div><dt className="inline font-medium">Código: </dt><dd className="inline text-muted-foreground">{product.sku}</dd></div>}
+                <div><dt className="inline font-medium">Unidad de venta: </dt><dd className="inline text-muted-foreground">{product.unidad}</dd></div>
+              </dl>
             </div>
             
             {/* Descripción detallada */}
-            {product.descripcionDetallada && (
+            {product.mostrarDescripcionDetallada && product.descripcionDetallada && (
               <div className="rounded-xl border border-border bg-card p-4 sm:p-6">
                 <h3 className="font-semibold mb-4">Especificaciones técnicas</h3>
                 <div className="prose prose-sm max-w-none text-muted-foreground whitespace-pre-line text-xs sm:text-sm">
@@ -188,7 +166,7 @@ export default function TornilleriaProductDetail({ product }: { product: any }) 
       </main>
       <IosToast 
         show={showToast} 
-        message={`${quantity} ${product.nombre || product.name} agregado al carrito`}
+        message={`${quantity} ${product.nombre} agregado al carrito`}
         onClose={() => setShowToast(false)}
       />
     </div>
