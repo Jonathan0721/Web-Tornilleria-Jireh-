@@ -24,6 +24,7 @@ function validateUrl(url: string): boolean {
 function productFields(formData: FormData) {
   const name = sanitizeString(String(formData.get('name') || ''))
   const sku = sanitizeString(String(formData.get('sku') || '')).toUpperCase()
+  const family = sanitizeString(String(formData.get('familia') || ''))
   const category = sanitizeString(String(formData.get('category') || ''))
   const tipo = sanitizeString(String(formData.get('tipo') || ''))
   const medidas = sanitizeString(String(formData.get('medidas') || ''))
@@ -49,6 +50,7 @@ function productFields(formData: FormData) {
 
   if (!name || name.length < 2 || name.length > 200) throw new Error('Nombre de producto inválido (2-200 caracteres)')
   if (!sku || sku.length < 3 || sku.length > 50) throw new Error('SKU inválido (3-50 caracteres)')
+  if (family.length > 120) throw new Error('La familia no puede superar 120 caracteres')
   if (!category || category.length < 2 || category.length > 50) throw new Error('Categoría inválida (2-50 caracteres)')
   if (tipo.length > 30) throw new Error('Tipo inválido')
   if (medidas.length > 50) throw new Error('Medidas inválidas')
@@ -63,6 +65,7 @@ function productFields(formData: FormData) {
   return {
     nombre: name,
     sku,
+    familia: family || null,
     categoria: category,
     tipo: tipo || null,
     medidas: medidas || null,

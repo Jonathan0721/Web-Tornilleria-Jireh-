@@ -17,6 +17,7 @@ export default async function CatalogoPage() {
     stock: p.stock,
     unit: p.unidad,
     sku: p.sku,
+    family: p.familia,
     tipo: p.tipo,
     medidas: p.medidas,
     descripcion: p.descripcion,

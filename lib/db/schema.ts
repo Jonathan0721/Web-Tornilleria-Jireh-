@@ -61,6 +61,7 @@ export const clientes = pgTable('clientes', {
 export const inventario = pgTable('inventario', {
   id: uuid('id').primaryKey(),
   sku: text('sku').notNull(),
+  familia: text('familia'),
   nombre: text('nombre').notNull(),
   categoria: text('categoria').notNull(),
   descripcion: text('descripcion'),

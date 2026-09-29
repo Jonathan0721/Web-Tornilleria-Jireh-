@@ -33,6 +33,7 @@ type InventoryItem = {
   id: string
   name: string
   sku: string
+  family: string
   category: string
   price: string
   stock: number
@@ -454,6 +455,8 @@ export function TornilleriaDashboard({
                       <input name="name" required placeholder="Nombre del producto" className="h-9 rounded-md border border-input bg-background px-3 text-sm" />
                       <input name="sku" required placeholder="SKU" className="h-9 rounded-md border border-input bg-background px-3 text-sm" />
                     </div>
+                    <input name="familia" maxLength={120} placeholder="Familia (ej.: Tornillo hexagonal · Rosca ordinaria · Grado 5)" className="h-9 rounded-md border border-input bg-background px-3 text-sm" />
+                    <p className="text-xs text-muted-foreground">Usa exactamente el mismo nombre de familia en todas las medidas para que aparezcan juntas en el catálogo.</p>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                       <input name="category" required placeholder="Categoría" className="h-9 rounded-md border border-input bg-background px-3 text-sm" />
                       <select name="tipo" className="h-9 rounded-md border border-input bg-background px-3 text-sm">
@@ -568,6 +571,7 @@ export function TornilleriaDashboard({
                         {selectedInventory.image && <img src={selectedInventory.image} alt={selectedInventory.name} className="max-h-56 w-full rounded-lg bg-muted object-contain" />}
                         <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                           <div><dt className="text-xs text-muted-foreground">Categoría</dt><dd>{selectedInventory.category}</dd></div>
+                          <div><dt className="text-xs text-muted-foreground">Familia</dt><dd>{selectedInventory.family || 'Sin agrupar'}</dd></div>
                           <div><dt className="text-xs text-muted-foreground">Precio</dt><dd>Q {Number(selectedInventory.price).toFixed(2)} / {selectedInventory.unit}</dd></div>
                           <div><dt className="text-xs text-muted-foreground">Tipo</dt><dd>{selectedInventory.tipo || 'Sin especificar'}</dd></div>
                           <div><dt className="text-xs text-muted-foreground">Medidas</dt><dd>{selectedInventory.medidas || 'Sin especificar'}</dd></div>
@@ -613,6 +617,7 @@ export function TornilleriaDashboard({
                       }} className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                         <label className="text-sm">Nombre<input name="name" required maxLength={200} defaultValue={selectedInventory.name} className="mt-1 h-10 w-full rounded-md border border-input bg-background px-3" /></label>
                         <label className="text-sm">Código / SKU<input name="sku" required maxLength={50} defaultValue={selectedInventory.sku} className="mt-1 h-10 w-full rounded-md border border-input bg-background px-3" /></label>
+                        <label className="text-sm sm:col-span-2">Familia<input name="familia" maxLength={120} defaultValue={selectedInventory.family} placeholder="Ej.: Tornillo hexagonal · Rosca ordinaria · Grado 5" className="mt-1 h-10 w-full rounded-md border border-input bg-background px-3" /><span className="mt-1 block text-xs text-muted-foreground">Todas las variantes que compartan este nombre se agruparán en el catálogo.</span></label>
                         <label className="text-sm">Categoría<input name="category" required maxLength={50} defaultValue={selectedInventory.category} className="mt-1 h-10 w-full rounded-md border border-input bg-background px-3" /></label>
                         <label className="text-sm">Tipo<input name="tipo" maxLength={30} defaultValue={selectedInventory.tipo} className="mt-1 h-10 w-full rounded-md border border-input bg-background px-3" /></label>
                         <label className="text-sm">Medidas<input name="medidas" maxLength={50} defaultValue={selectedInventory.medidas} className="mt-1 h-10 w-full rounded-md border border-input bg-background px-3" /></label>

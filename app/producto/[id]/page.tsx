@@ -29,6 +29,12 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
   if (!product) {
     notFound()
   }
-  
-  return <TornilleriaProductDetail product={product} />
+
+  const variants = product.familia
+    ? await db.select().from(inventario).where(
+        and(eq(inventario.familia, product.familia), eq(inventario.activo, true))
+      ).orderBy(inventario.medidas)
+    : [product]
+
+  return <TornilleriaProductDetail product={product} variants={variants} />
 }

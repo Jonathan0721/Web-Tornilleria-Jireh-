@@ -9,6 +9,7 @@ export interface CartItem {
   quantity: number
   image?: string
   sku?: string
+  stock?: number
 }
 
 interface CartContextType {
@@ -57,7 +58,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
       if (existing) {
         return {
           ...prev,
-          [id]: { ...existing, quantity: existing.quantity + quantity },
+          [id]: {
+            ...existing,
+            stock: Number.isInteger(product.stock) ? product.stock : existing.stock,
+            quantity: Math.min(
+              Number.isInteger(product.stock) ? product.stock : existing.stock ?? Number.MAX_SAFE_INTEGER,
+              existing.quantity + quantity,
+            ),
+          },
         }
       }
       return {
@@ -69,6 +77,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
           quantity,
           image: product.imagen || product.image,
           sku: String(product.sku || id),
+          stock: Number.isInteger(product.stock) ? product.stock : undefined,
         },
       }
     })
@@ -89,7 +98,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
     setCart((prev) => {
       if (!prev[id]) return prev
-      return { ...prev, [id]: { ...prev[id], quantity } }
+      const maxQuantity = prev[id].stock ?? Number.MAX_SAFE_INTEGER
+      return { ...prev, [id]: { ...prev[id], quantity: Math.max(1, Math.min(quantity, maxQuantity)) } }
     })
   }
 

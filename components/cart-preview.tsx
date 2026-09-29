@@ -17,6 +17,47 @@ import { createPortal } from 'react-dom'
 
 type DeliveryType = 'delivery' | 'pickup'
 
+function CartQuantityInput({
+  quantity,
+  stock,
+  onCommit,
+  name,
+}: {
+  quantity: number
+  stock?: number
+  onCommit: (quantity: number) => void
+  name: string
+}) {
+  const [draft, setDraft] = useState(String(quantity))
+
+  useEffect(() => setDraft(String(quantity)), [quantity])
+
+  return (
+    <input
+      type="number"
+      min="1"
+      max={stock}
+      step="1"
+      value={draft}
+      onChange={(event) => setDraft(event.currentTarget.value)}
+      onBlur={() => {
+        const parsed = Number(draft)
+        if (!Number.isInteger(parsed) || parsed < 1) {
+          setDraft(String(quantity))
+          return
+        }
+        onCommit(stock === undefined ? parsed : Math.min(parsed, stock))
+      }}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter') event.currentTarget.blur()
+      }}
+      onClick={(event) => event.stopPropagation()}
+      className="h-10 w-20 bg-transparent text-center text-base font-bold outline-none"
+      aria-label={`Cantidad de ${name}`}
+    />
+  )
+}
+
 export function CartPreview() {
   const { getCartItems, getCartTotal, getCartCount, removeFromCart, updateQuantity, clearCart } =
     useCart()
@@ -181,12 +222,15 @@ export function CartPreview() {
         method: 'POST',
         body: buildOrderFormData(),
       })
-      if (response.ok) {
-        const data = await response.json().catch(() => ({}))
-        orderNumber = data.orderNumber
+      const data = await response.json().catch(() => ({}))
+      if (!response.ok) {
+        throw new Error(data.error || 'No se pudo registrar el pedido')
       }
+      orderNumber = data.orderNumber
     } catch (error) {
-      console.error('Error al registrar pedido:', error)
+      setOrderError(error instanceof Error ? error.message : 'No se pudo registrar el pedido')
+      setOrderLoading(false)
+      return
     }
 
     window.open(
@@ -298,9 +342,12 @@ export function CartPreview() {
                               >
                                 <Minus className="size-4" />
                               </button>
-                              <span className="min-w-[2.5rem] text-center text-base font-bold">
-                                {item.quantity}
-                              </span>
+                              <CartQuantityInput
+                                quantity={item.quantity}
+                                stock={item.stock}
+                                name={item.name}
+                                onCommit={(quantity) => updateQuantity(item.id, quantity)}
+                              />
                               <button
                                 type="button"
                                 onClick={(e) => {

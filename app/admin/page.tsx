@@ -14,6 +14,7 @@ export default async function AdminPage() {
     id: product.id,
     name: product.nombre,
     sku: product.sku,
+    family: product.familia || '',
     category: product.categoria,
     price: product.precio,
     stock: product.stock,

@@ -30,7 +30,7 @@ export async function createOrder(formData: FormData) {
   const itemsJson = String(formData.get('items') || '[]')
   const items = JSON.parse(itemsJson)
 
-  if (!clientName || !clientPhone || items.length === 0) {
+  if (!clientName || !clientPhone || !Array.isArray(items) || items.length === 0) {
     throw new Error('Datos de pedido incompletos o inválidos')
   }
 
@@ -86,31 +86,37 @@ export async function createOrder(formData: FormData) {
     })
   }
 
-  // Calcular totales (usa inventario si existe; si no, acepta precio del carrito)
+  // Calcular totales usando únicamente precio y stock confirmados en inventario.
   let subtotal = 0
-  const orderItems = []
+  const orderItems: Array<{
+    id: string
+    inventarioId: string
+    sku: string
+    nombre: string
+    cantidad: number
+    precioUnitario: number
+    total: number
+  }> = []
 
   for (const item of items) {
     const sku = String(item.sku || item.id || '')
     if (!sku) throw new Error('Producto sin SKU')
 
-    const product = await db
+    const [product] = await db
       .select()
       .from(inventario)
       .where(eq(inventario.sku, sku))
       .limit(1)
 
-    const quantity = Number(item.quantity) || 0
-    if (quantity <= 0) throw new Error(`Cantidad inválida para ${sku}`)
+    const quantity = Number(item.quantity)
+    if (!Number.isInteger(quantity) || quantity <= 0) throw new Error(`Cantidad inválida para ${sku}`)
+    if (!product || !product.activo) throw new Error(`El producto ${sku} ya no está disponible`)
+    if (product.stock < quantity) throw new Error(`Solo hay ${product.stock} unidades disponibles para ${sku}`)
 
-    const unitPrice = product.length
-      ? Number(product[0].precio)
-      : Number(item.price)
-    const nombre = product.length
-      ? product[0].nombre
-      : String(item.name || sku)
+    const unitPrice = Number(product.precio)
+    const nombre = product.nombre
 
-    if (!Number.isFinite(unitPrice) || unitPrice < 0) {
+    if (!Number.isFinite(unitPrice) || unitPrice <= 0) {
       throw new Error(`Precio inválido para ${sku}`)
     }
 
@@ -119,8 +125,7 @@ export async function createOrder(formData: FormData) {
 
     orderItems.push({
       id: randomUUID(),
-      pedidoId: '',
-      inventarioId: product.length ? product[0].id : null,
+      inventarioId: product.id,
       sku,
       nombre,
       cantidad: quantity,
@@ -128,12 +133,6 @@ export async function createOrder(formData: FormData) {
       total: itemTotal,
     })
 
-    if (product.length) {
-      await db
-        .update(inventario)
-        .set({ stock: Math.max(0, product[0].stock - quantity) })
-        .where(eq(inventario.id, product[0].id))
-    }
   }
 
   const impuestos = subtotal * 0.12 // 12% IVA Guatemala
@@ -143,35 +142,48 @@ export async function createOrder(formData: FormData) {
   const orderCount = await db.select({ count: sql<number>`count(*)` }).from(pedidos)
   const orderNumber = `ORD-${String((orderCount[0]?.count || 0) + 1).padStart(4, '0')}`
 
-  // Crear pedido
+  // Reservar inventario y crear el pedido en una sola transacción.
   const orderId = randomUUID()
-  await db.insert(pedidos).values({
-    id: orderId,
-    numero: orderNumber,
-    clienteId: clientId,
-    estado: 'pendiente',
-    subtotal: subtotal.toFixed(2),
-    impuestos: impuestos.toFixed(2),
-    total: total.toFixed(2),
-    notas: notes
-  })
-  await db.insert(pedidoHistorial).values({
-    id: randomUUID(),
-    pedidoId: orderId,
-    estadoAnterior: null,
-    estadoNuevo: 'pendiente',
-    cambiadoPor: 'Sistema',
-  })
+  await db.transaction(async (tx) => {
+    for (const item of orderItems) {
+      const [reserved] = await tx.update(inventario)
+        .set({ stock: sql`${inventario.stock} - ${item.cantidad}` })
+        .where(and(
+          eq(inventario.id, item.inventarioId),
+          eq(inventario.activo, true),
+          sql`${inventario.stock} >= ${item.cantidad}`,
+        ))
+        .returning({ id: inventario.id })
+      if (!reserved) throw new Error(`No hay existencias suficientes para ${item.sku}; actualiza el carrito`)
+    }
 
-  // Crear items del pedido
-  for (const item of orderItems) {
-    await db.insert(pedidoItems).values({
-      ...item,
-      pedidoId: orderId,
-      precioUnitario: item.precioUnitario.toFixed(2),
-      total: item.total.toFixed(2),
+    await tx.insert(pedidos).values({
+      id: orderId,
+      numero: orderNumber,
+      clienteId: clientId,
+      estado: 'pendiente',
+      subtotal: subtotal.toFixed(2),
+      impuestos: impuestos.toFixed(2),
+      total: total.toFixed(2),
+      notas: notes
     })
-  }
+    await tx.insert(pedidoHistorial).values({
+      id: randomUUID(),
+      pedidoId: orderId,
+      estadoAnterior: null,
+      estadoNuevo: 'pendiente',
+      cambiadoPor: 'Sistema',
+    })
+
+    for (const item of orderItems) {
+      await tx.insert(pedidoItems).values({
+        ...item,
+        pedidoId: orderId,
+        precioUnitario: item.precioUnitario.toFixed(2),
+        total: item.total.toFixed(2),
+      })
+    }
+  })
 
   revalidatePath('/admin')
   revalidatePath('/catalogo')
