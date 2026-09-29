@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react'
 import Link from 'next/link'
 import { Plus } from 'lucide-react'
 import { useCart } from '@/lib/cart-context'
-import { CatalogProduct, getProductDimensions } from '@/lib/product-variants'
+import { CatalogProduct, compareDimensionValues, compareProductDimensions, getProductDimensions } from '@/lib/product-variants'
 
 const money = (value: number) =>
   new Intl.NumberFormat('es-GT', { style: 'currency', currency: 'GTQ' }).format(value)
@@ -16,22 +16,27 @@ export function ProductFamilyCard({
   family: string
   variants: CatalogProduct[]
 }) {
-  const [selectedId, setSelectedId] = useState(variants[0]?.id || '')
+  const sortedVariants = useMemo(
+    () => [...variants].sort((left, right) => compareProductDimensions(left.medidas, right.medidas)),
+    [variants],
+  )
+  const [selectedId, setSelectedId] = useState(sortedVariants[0]?.id || '')
   const [quantity, setQuantity] = useState(1)
   const { addToCart } = useCart()
-  const selected = variants.find((variant) => variant.id === selectedId) || variants[0]
-  const familyImage = selected.imagen || variants.find((variant) => variant.imagen)?.imagen
-  const dimensionOptions = useMemo(() => variants.map((variant) => ({
+  const selected = sortedVariants.find((variant) => variant.id === selectedId) || sortedVariants[0]
+  const familyImage = selected.imagen || sortedVariants.find((variant) => variant.imagen)?.imagen
+  const dimensionOptions = useMemo(() => sortedVariants.map((variant) => ({
     variant,
     dimensions: getProductDimensions(variant.medidas),
-  })), [variants])
-  const hasDimensions = variants.length > 1 && dimensionOptions.every((item) => item.dimensions !== null)
+  })), [sortedVariants])
+  const hasDimensions = sortedVariants.length > 1 && dimensionOptions.every((item) => item.dimensions !== null)
   const widths = [...new Set(dimensionOptions.flatMap((item) => item.dimensions ? [item.dimensions.width] : []))]
+    .sort(compareDimensionValues)
   const selectedDimensions = getProductDimensions(selected.medidas)
   const width = selectedDimensions?.width || widths[0] || ''
   const lengths = [...new Set(dimensionOptions.flatMap((item) =>
     item.dimensions?.width === width ? [item.dimensions.length] : [],
-  ))]
+  ))].sort(compareDimensionValues)
   const quantityLimit = 1_000_000
 
   function selectWidth(value: string) {
@@ -83,7 +88,7 @@ export function ProductFamilyCard({
       {hasDimensions ? (
         <div className="mt-4 grid grid-cols-2 gap-3">
           <label className="text-xs font-medium text-muted-foreground">
-            Ancho
+            Grosor
             <select
               value={width}
               onChange={(event) => selectWidth(event.currentTarget.value)}
@@ -111,7 +116,7 @@ export function ProductFamilyCard({
             onChange={(event) => { setSelectedId(event.currentTarget.value); setQuantity(1) }}
             className="mt-1 h-11 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground"
           >
-            {variants.map((variant) => (
+            {sortedVariants.map((variant) => (
               <option key={variant.id} value={variant.id}>{variant.medidas || variant.sku || variant.id}</option>
             ))}
           </select>

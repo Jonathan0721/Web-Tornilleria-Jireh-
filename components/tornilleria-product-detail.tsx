@@ -8,7 +8,7 @@ import { IosToast } from './ios-toast'
 import { CartPreview } from './cart-preview'
 import type { InferSelectModel } from 'drizzle-orm'
 import type { inventario } from '@/lib/db/schema'
-import { getProductDimensions } from '@/lib/product-variants'
+import { compareDimensionValues, compareProductDimensions, getProductDimensions } from '@/lib/product-variants'
 
 type Product = InferSelectModel<typeof inventario>
 
@@ -22,18 +22,23 @@ export default function TornilleriaProductDetail({
   const quantityLimit = 1_000_000
   const [selectedSku, setSelectedSku] = useState(product.sku)
   const [quantity, setQuantity] = useState(1)
-  const selectedProduct = variants.find((variant) => variant.sku === selectedSku) || product
-  const familyImage = selectedProduct.imagen || variants.find((variant) => variant.imagen)?.imagen
-  const dimensionOptions = useMemo(() => variants.map((variant) => ({
+  const sortedVariants = useMemo(
+    () => [...variants].sort((left, right) => compareProductDimensions(left.medidas, right.medidas)),
+    [variants],
+  )
+  const selectedProduct = sortedVariants.find((variant) => variant.sku === selectedSku) || product
+  const familyImage = selectedProduct.imagen || sortedVariants.find((variant) => variant.imagen)?.imagen
+  const dimensionOptions = useMemo(() => sortedVariants.map((variant) => ({
     variant,
     dimensions: getProductDimensions(variant.medidas),
-  })), [variants])
-  const hasDimensions = variants.length > 1 && dimensionOptions.every((item) => item.dimensions !== null)
+  })), [sortedVariants])
+  const hasDimensions = sortedVariants.length > 1 && dimensionOptions.every((item) => item.dimensions !== null)
   const widths = [...new Set(dimensionOptions.flatMap((item) => item.dimensions ? [item.dimensions.width] : []))]
+    .sort(compareDimensionValues)
   const selectedDimensions = getProductDimensions(selectedProduct.medidas)
   const lengths = [...new Set(dimensionOptions.flatMap((item) =>
     item.dimensions && item.dimensions.width === selectedDimensions?.width ? [item.dimensions.length] : [],
-  ))]
+  ))].sort(compareDimensionValues)
   const [showToast, setShowToast] = useState(false)
   const { addToCart } = useCart()
   
@@ -102,11 +107,11 @@ export default function TornilleriaProductDetail({
             </div>
             
               <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight mb-2">{selectedProduct.familia || selectedProduct.nombre}</h1>
-              {variants.length > 1 && (
+              {sortedVariants.length > 1 && (
                 hasDimensions ? (
                   <div className="mb-5 grid grid-cols-2 gap-3">
                     <label className="text-sm font-medium">
-                      Ancho
+                      Grosor
                       <select
                         value={selectedDimensions?.width || widths[0] || ''}
                         onChange={(event) => {
@@ -143,7 +148,7 @@ export default function TornilleriaProductDetail({
                       onChange={(event) => { setSelectedSku(event.currentTarget.value); setQuantity(1) }}
                       className="mt-1 h-11 w-full rounded-lg border border-input bg-background px-3"
                     >
-                      {variants.map((variant) => <option key={variant.sku} value={variant.sku}>{variant.medidas || variant.sku}</option>)}
+                      {sortedVariants.map((variant) => <option key={variant.sku} value={variant.sku}>{variant.medidas || variant.sku}</option>)}
                     </select>
                   </label>
                 )
