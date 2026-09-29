@@ -9,12 +9,13 @@ import type { getOrderById as GetOrderById, updateOrderStatus as UpdateOrderStat
 import { 
   House, ClipboardList, PackageSearch, Box, Users, Settings, Trash2,
   Search, Bell, X, Menu, ArrowUpRight, ChevronDown, Plus, Truck,
-  CircleDollarSign, ShoppingCart, SlidersHorizontal, ShieldCheck
+  CircleDollarSign, ShoppingCart, SlidersHorizontal, ShieldCheck, FileText
 } from 'lucide-react'
 
 const navItems = [
   { label: 'Resumen', icon: House },
   { label: 'Pedidos', icon: ClipboardList },
+  { label: 'Ventas', icon: FileText },
   { label: 'Catálogo', icon: PackageSearch },
   { label: 'Inventario', icon: Box },
   { label: 'Clientes', icon: Users },
@@ -150,7 +151,7 @@ export function TornilleriaDashboard({
         <p className="mb-3 px-3 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Gestión</p>
         <nav className="flex flex-col gap-1">
           {navItems.map(({ label, icon: Icon }) => {
-            const href = label === 'Resumen' ? '/admin' : label === 'Pedidos' ? '/admin/pedidos' : label === 'Catálogo' ? '/admin/catalogo' : label === 'Inventario' ? '/admin/inventario' : '/admin/clientes'
+            const href = label === 'Resumen' ? '/admin' : label === 'Pedidos' ? '/admin/pedidos' : label === 'Ventas' ? '/admin/ventas' : label === 'Catálogo' ? '/admin/catalogo' : label === 'Inventario' ? '/admin/inventario' : '/admin/clientes'
             return <a key={label} href={href} onClick={() => setMobileOpen(false)} className={`flex items-center justify-between rounded-lg px-3 py-2.5 text-sm transition-colors ${activeSection === label ? 'bg-accent font-medium text-accent-foreground' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}><span className="flex items-center gap-3"><Icon className="size-[18px]" />{label}</span>{label === 'Pedidos' && pendingOrders && <span className="rounded-full bg-muted px-2 py-0.5 text-xs">{pendingOrders.total}</span>}</a>
           })}
         </nav>

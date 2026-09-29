@@ -96,3 +96,29 @@ export const pedidoHistorial = pgTable('pedido_historial', {
   cambiadoPor: text('cambiado_por'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
 })
+export const documentosVenta = pgTable('documentos_venta', {
+  id: uuid('id').primaryKey(),
+  numeroCotizacion: text('numero_cotizacion').notNull().unique(),
+  numeroComprobante: text('numero_comprobante').unique(),
+  clienteId: uuid('cliente_id').references(() => clientes.id, { onDelete: 'set null' }),
+  estado: text('estado').notNull().default('cotizacion'),
+  subtotal: numeric('subtotal', { precision: 12, scale: 2 }).notNull(),
+  impuestos: numeric('impuestos', { precision: 12, scale: 2 }).notNull(),
+  total: numeric('total', { precision: 12, scale: 2 }).notNull(),
+  notas: text('notas'),
+  creadoPor: text('creado_por').notNull(),
+  confirmadoAt: timestamp('confirmado_at'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+})
+export const documentoVentaItems = pgTable('documento_venta_items', {
+  id: uuid('id').primaryKey(),
+  documentoId: uuid('documento_id').notNull().references(() => documentosVenta.id, { onDelete: 'cascade' }),
+  inventarioId: uuid('inventario_id').references(() => inventario.id, { onDelete: 'set null' }),
+  sku: text('sku').notNull(),
+  nombre: text('nombre').notNull(),
+  cantidad: integer('cantidad').notNull(),
+  cantidadDescontada: integer('cantidad_descontada').notNull().default(0),
+  precioUnitario: numeric('precio_unitario', { precision: 12, scale: 2 }).notNull(),
+  total: numeric('total', { precision: 12, scale: 2 }).notNull(),
+})
