@@ -51,7 +51,7 @@ export function downloadSalesDocumentPdf(data: SalesDocumentPdfData) {
 
   pdf.setFont('helvetica', 'bold')
   pdf.setFontSize(16)
-  pdf.text('Tornilleria Jireh', left, y)
+  pdf.text('TORNILLOS JEHOVA JIREH', left, y)
   y += 9
   pdf.setFontSize(12)
   pdf.text(title, left, y)
@@ -60,8 +60,10 @@ export function downloadSalesDocumentPdf(data: SalesDocumentPdfData) {
   y += 7
   pdf.setFont('helvetica', 'normal')
   pdf.setFontSize(9)
-  pdf.text('DOCUMENTO INTERNO - NO ES FACTURA FISCAL FEL', left, y)
-  y += 8
+  if (isReceipt) {
+    pdf.text('DOCUMENTO INTERNO - NO ES FACTURA FISCAL FEL', left, y)
+    y += 8
+  }
   pdf.text(`Fecha: ${new Date(data.createdAt).toLocaleDateString('es-GT')}`, left, y)
   y += 7
   pdf.setFont('helvetica', 'bold')
