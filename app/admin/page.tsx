@@ -45,6 +45,7 @@ export default async function AdminPage() {
     date: order.createdAt.toLocaleDateString('es-GT'),
     amount: new Intl.NumberFormat('es-GT', { style: 'currency', currency: 'GTQ' }).format(order.total),
     status: order.estado,
+    needsConfirmation: Boolean(order.notas?.includes('PENDIENTE DE CONFIRMAR PRECIO/DISPONIBILIDAD:')),
     phone: order.clienteTelefono || '',
     email: order.clienteEmail || '',
   }))

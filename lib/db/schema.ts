@@ -87,7 +87,7 @@ export const inventario = pgTable('inventario', {
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 })
 export const pedidos = pgTable('pedidos', { id: uuid('id').primaryKey(), numero: text('numero').notNull(), clienteId: uuid('cliente_id'), estado: text('estado').notNull(), subtotal: numeric('subtotal', { precision: 12, scale: 2 }).notNull(), impuestos: numeric('impuestos', { precision: 12, scale: 2 }).notNull(), total: numeric('total', { precision: 12, scale: 2 }).notNull(), notas: text('notas'), createdAt: timestamp('created_at').notNull().defaultNow(), updatedAt: timestamp('updated_at').notNull().defaultNow() })
-export const pedidoItems = pgTable('pedido_items', { id: uuid('id').primaryKey(), pedidoId: uuid('pedido_id').notNull(), inventarioId: uuid('inventario_id'), sku: text('sku').notNull(), nombre: text('nombre').notNull(), cantidad: integer('cantidad').notNull(), precioUnitario: numeric('precio_unitario', { precision: 12, scale: 2 }).notNull(), total: numeric('total', { precision: 12, scale: 2 }).notNull() })
+export const pedidoItems = pgTable('pedido_items', { id: uuid('id').primaryKey(), pedidoId: uuid('pedido_id').notNull(), inventarioId: uuid('inventario_id'), sku: text('sku').notNull(), nombre: text('nombre').notNull(), cantidad: integer('cantidad').notNull(), cantidadReservada: integer('cantidad_reservada').notNull().default(0), precioUnitario: numeric('precio_unitario', { precision: 12, scale: 2 }).notNull(), total: numeric('total', { precision: 12, scale: 2 }).notNull() })
 export const pedidoHistorial = pgTable('pedido_historial', {
   id: uuid('id').primaryKey(),
   pedidoId: uuid('pedido_id').notNull().references(() => pedidos.id, { onDelete: 'cascade' }),

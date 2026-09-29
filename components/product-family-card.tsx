@@ -32,8 +32,7 @@ export function ProductFamilyCard({
   const lengths = [...new Set(dimensionOptions.flatMap((item) =>
     item.dimensions?.width === width ? [item.dimensions.length] : [],
   ))]
-  const purchasable = selected.stock > 0 && selected.price > 0
-  const unavailableReason = selected.price <= 0 ? 'Precio pendiente' : 'Agotado'
+  const quantityLimit = 1_000_000
 
   function selectWidth(value: string) {
     const next = dimensionOptions.find((item) =>
@@ -130,8 +129,8 @@ export function ProductFamilyCard({
             </p>
           )}
           {selected.mostrarStock !== false && (
-            <p className={`mt-1 text-xs ${selected.stock > 10 ? 'text-green-600' : selected.stock > 0 ? 'text-orange-600' : 'text-red-600'}`}>
-              {selected.stock > 0 ? `${selected.stock} disponibles` : 'Agotado'}
+            <p className={`mt-1 text-xs ${selected.stock > 10 ? 'text-green-600' : 'text-orange-600'}`}>
+              {selected.stock > 0 ? `${selected.stock} disponibles` : 'Disponible por encargo'}
             </p>
           )}
         </div>
@@ -140,10 +139,10 @@ export function ProductFamilyCard({
           <input
             type="number"
             min="1"
-            max={selected.stock}
+            max={quantityLimit}
             step="1"
             value={quantity}
-            onChange={(event) => setQuantity(Math.max(1, Math.min(selected.stock || 1, Number(event.currentTarget.value) || 1)))}
+            onChange={(event) => setQuantity(Math.max(1, Math.min(quantityLimit, Math.floor(Number(event.currentTarget.value) || 1))))}
             className="mt-1 h-11 w-24 rounded-lg border border-input bg-background px-3 text-sm text-foreground"
             aria-label={`Cantidad de ${selected.name}`}
           />
@@ -157,11 +156,10 @@ export function ProductFamilyCard({
         <button
           type="button"
           onClick={() => addToCart({ ...selected, id: selected.sku || selected.id }, quantity)}
-          disabled={!purchasable || quantity > selected.stock}
-          className="inline-flex min-h-[44px] items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-50"
+          className="inline-flex min-h-[44px] items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
         >
           <Plus className="size-4" />
-          {purchasable ? 'Añadir' : unavailableReason}
+          Agregar al pedido
         </button>
       </div>
     </article>

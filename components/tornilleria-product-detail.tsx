@@ -19,6 +19,7 @@ export default function TornilleriaProductDetail({
   product: Product
   variants?: Product[]
 }) {
+  const quantityLimit = 1_000_000
   const [selectedSku, setSelectedSku] = useState(product.sku)
   const [quantity, setQuantity] = useState(1)
   const selectedProduct = variants.find((variant) => variant.sku === selectedSku) || product
@@ -179,27 +180,26 @@ export default function TornilleriaProductDetail({
                 <input
                   type="number"
                   min="1"
-                  max={selectedProduct.stock}
+                  max={quantityLimit}
                   step="1"
                   value={quantity}
-                  onChange={(event) => setQuantity(Math.max(1, Math.min(selectedProduct.stock || 1, Number(event.currentTarget.value) || 1)))}
+                  onChange={(event) => setQuantity(Math.max(1, Math.min(quantityLimit, Math.floor(Number(event.currentTarget.value) || 1))))}
                   className="mt-1 h-12 w-32 rounded-lg border border-input bg-background px-3"
                 />
               </label>
               <button 
                 onClick={handleAddToCart}
-                disabled={selectedProduct.stock < quantity || selectedProduct.stock === 0 || Number(selectedProduct.precio) <= 0}
-                className="flex-1 rounded-lg bg-primary px-4 sm:px-6 py-4 min-h-[48px] font-medium text-primary-foreground hover:opacity-90 active:opacity-80 disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base transition-opacity cursor-pointer"
+                className="flex-1 rounded-lg bg-primary px-4 sm:px-6 py-4 min-h-[48px] font-medium text-primary-foreground hover:opacity-90 active:opacity-80 text-sm sm:text-base transition-opacity cursor-pointer"
               >
                 <ShoppingCart className="mr-2 inline size-4" />
-                Agregar al carrito
+                Agregar al pedido
               </button>
             </div>
             
             {selectedProduct.mostrarStock && <div className="mb-8">
               <p className="text-sm font-medium mb-2">Disponibilidad: </p>
-              <p className={`text-sm ${selectedProduct.stock > 10 ? 'text-green-600' : selectedProduct.stock > 0 ? 'text-orange-600' : 'text-red-600'}`}>
-                {selectedProduct.stock > 10 ? `${selectedProduct.stock} unidades disponibles` : selectedProduct.stock > 0 ? `Solo ${selectedProduct.stock} unidades disponibles` : 'Agotado'}
+              <p className={`text-sm ${selectedProduct.stock > 10 ? 'text-green-600' : 'text-orange-600'}`}>
+                {selectedProduct.stock > 10 ? `${selectedProduct.stock} unidades disponibles` : selectedProduct.stock > 0 ? `Hay ${selectedProduct.stock}; puedes solicitar más` : 'Disponible por encargo; existencia por confirmar'}
               </p>
             </div>}
             

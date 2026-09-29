@@ -25,6 +25,7 @@ interface CartContextType {
 
 const CartContext = createContext<CartContextType | undefined>(undefined)
 const STORAGE_KEY = 'tj-cart-v1'
+const MAX_ORDER_QUANTITY = 1_000_000
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [cart, setCart] = useState<Record<string, CartItem>>({})
@@ -51,6 +52,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const addToCart = (product: any, quantity: number) => {
     const id = String(product.id || product.sku || '')
     if (!id) return
+    const requestedQuantity = Math.max(1, Math.min(MAX_ORDER_QUANTITY, Math.floor(Number(quantity) || 1)))
     const name = String(product.nombre || product.name || id)
     const price = Number(product.precio ?? product.price ?? 0)
     setCart((prev) => {
@@ -61,10 +63,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
           [id]: {
             ...existing,
             stock: Number.isInteger(product.stock) ? product.stock : existing.stock,
-            quantity: Math.min(
-              Number.isInteger(product.stock) ? product.stock : existing.stock ?? Number.MAX_SAFE_INTEGER,
-              existing.quantity + quantity,
-            ),
+            quantity: Math.min(MAX_ORDER_QUANTITY, existing.quantity + requestedQuantity),
           },
         }
       }
@@ -74,7 +73,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
           id,
           name,
           price,
-          quantity,
+          quantity: requestedQuantity,
           image: product.imagen || product.image,
           sku: String(product.sku || id),
           stock: Number.isInteger(product.stock) ? product.stock : undefined,
@@ -98,8 +97,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
     setCart((prev) => {
       if (!prev[id]) return prev
-      const maxQuantity = prev[id].stock ?? Number.MAX_SAFE_INTEGER
-      return { ...prev, [id]: { ...prev[id], quantity: Math.max(1, Math.min(quantity, maxQuantity)) } }
+      return {
+        ...prev,
+        [id]: {
+          ...prev[id],
+          quantity: Math.max(1, Math.min(MAX_ORDER_QUANTITY, Math.floor(quantity))),
+        },
+      }
     })
   }
 

@@ -18,7 +18,8 @@ export async function sendOrderConfirmationEmail(
   orderNumber: string,
   customerName: string,
   total: number,
-  items: Array<{ name: string; quantity: number; price: number }>
+  items: Array<{ name: string; quantity: number; price: number }>,
+  needsConfirmation = false
 ) {
   if (!process.env.RESEND_API_KEY) {
     console.warn('RESEND_API_KEY no configurada. Email no enviado.')
@@ -27,8 +28,9 @@ export async function sendOrderConfirmationEmail(
 
   try {
     const itemsList = items
-      .map(item => `<li>${escapeHtml(item.name)} - Cantidad: ${item.quantity} - Q ${item.price.toFixed(2)}</li>`)
+      .map(item => `<li>${escapeHtml(item.name)} - Cantidad: ${item.quantity} - ${item.price > 0 ? `Q ${item.price.toFixed(2)} c/u` : 'Precio por confirmar'}</li>`)
       .join('')
+    const totalLabel = needsConfirmation ? 'Total provisional (pendiente de confirmar)' : 'Total'
 
     const { error } = await resend.emails.send({
       from: process.env.EMAIL_FROM || 'noreply@tornilleria.com',
@@ -43,7 +45,8 @@ export async function sendOrderConfirmationEmail(
           <ul style="list-style: none; padding: 0;">
             ${itemsList}
           </ul>
-          <p style="font-size: 18px; font-weight: bold;">Total: Q ${total.toFixed(2)}</p>
+          <p style="font-size: 18px; font-weight: bold;">${totalLabel}: Q ${total.toFixed(2)}</p>
+          ${needsConfirmation ? '<p>Te contactaremos para confirmar el precio final y la disponibilidad antes de preparar tu pedido.</p>' : ''}
           <p>Gracias por tu compra. Te contactaremos pronto para coordinar el envío.</p>
           <p style="color: #666; font-size: 14px;">TORNILLOS JEHOVA JIREH</p>
         </div>
@@ -59,7 +62,8 @@ export async function sendNewOrderNotificationToAdmin(
   orderNumber: string,
   customerName: string,
   customerEmail: string,
-  total: number
+  total: number,
+  needsConfirmation = false
 ) {
   if (!process.env.RESEND_API_KEY || !process.env.EMAIL_TO_ADMIN) {
     console.warn('RESEND_API_KEY o EMAIL_TO_ADMIN no configuradas. Email no enviado.')
@@ -77,7 +81,8 @@ export async function sendNewOrderNotificationToAdmin(
           <p><strong>Número de Pedido:</strong> ${escapeHtml(orderNumber)}</p>
           <p><strong>Cliente:</strong> ${escapeHtml(customerName)}</p>
           <p><strong>Email:</strong> ${escapeHtml(customerEmail)}</p>
-          <p><strong>Total:</strong> Q ${total.toFixed(2)}</p>
+          <p><strong>${needsConfirmation ? 'Total provisional' : 'Total'}:</strong> Q ${total.toFixed(2)}</p>
+          ${needsConfirmation ? '<p><strong>Atención:</strong> confirmar precio y disponibilidad antes de preparar el pedido.</p>' : ''}
           <p>Revisa el panel de administración para más detalles.</p>
         </div>
       `,

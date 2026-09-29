@@ -19,12 +19,10 @@ type DeliveryType = 'delivery' | 'pickup'
 
 function CartQuantityInput({
   quantity,
-  stock,
   onCommit,
   name,
 }: {
   quantity: number
-  stock?: number
   onCommit: (quantity: number) => void
   name: string
 }) {
@@ -36,7 +34,7 @@ function CartQuantityInput({
     <input
       type="number"
       min="1"
-      max={stock}
+      max={1_000_000}
       step="1"
       value={draft}
       onChange={(event) => setDraft(event.currentTarget.value)}
@@ -46,7 +44,7 @@ function CartQuantityInput({
           setDraft(String(quantity))
           return
         }
-        onCommit(stock === undefined ? parsed : Math.min(parsed, stock))
+        onCommit(Math.min(parsed, 1_000_000))
       }}
       onKeyDown={(event) => {
         if (event.key === 'Enter') event.currentTarget.blur()
@@ -72,7 +70,7 @@ export function CartPreview() {
   const [orderNotes, setOrderNotes] = useState('')
   const [orderLoading, setOrderLoading] = useState(false)
   const [orderError, setOrderError] = useState('')
-  const [orderSuccess, setOrderSuccess] = useState<{ orderNumber?: string } | null>(null)
+  const [orderSuccess, setOrderSuccess] = useState<{ orderNumber?: string; needsConfirmation?: boolean } | null>(null)
 
   const [mounted, setMounted] = useState(false)
   useEffect(() => {
@@ -84,6 +82,9 @@ export function CartPreview() {
   const count = getCartCount()
   const impuestos = total * 0.12
   const totalConImpuestos = total + impuestos
+  const needsConfirmation = cartItems.some((item) =>
+    item.price <= 0 || (item.stock !== undefined && item.quantity > item.stock),
+  )
 
   const money = (value: number) =>
     new Intl.NumberFormat('es-GT', { style: 'currency', currency: 'GTQ' }).format(value)
@@ -157,7 +158,7 @@ export function CartPreview() {
     return formData
   }
 
-  const buildWhatsAppMessage = (orderNumber?: string) => {
+  const buildWhatsAppMessage = (orderNumber?: string, confirmationRequired = needsConfirmation) => {
     const deliveryText =
       deliveryType === 'delivery' ? 'Envío a domicilio' : 'Recoger en tienda (Pick-up)'
     const addressText =
@@ -167,6 +168,7 @@ export function CartPreview() {
 
     let message = `🛒 *NUEVO PEDIDO - TORNILLOS JEHOVA JIREH*\n\n`
     if (orderNumber) message += `🧾 *Pedido:* ${orderNumber}\n`
+    if (confirmationRequired) message += '⚠️ *Precio y/o disponibilidad pendientes de confirmar; no es un total final.*\n'
     message += `👤 *Cliente:* ${clientName}\n`
     message += `📱 *Teléfono:* ${clientPhone}\n`
     if (clientNit) message += `🆔 *NIT:* ${clientNit}\n`
@@ -176,13 +178,19 @@ export function CartPreview() {
     cartItems.forEach((item, index) => {
       message += `${index + 1}. ${item.name}\n`
       message += `   SKU: ${item.sku || item.id}\n`
-      message += `   Cantidad: ${item.quantity} x ${money(item.price)}\n`
-      message += `   Subtotal: ${money(item.price * item.quantity)}\n\n`
+      message += `   Cantidad solicitada: ${item.quantity}\n`
+      message += item.price > 0
+        ? `   Precio registrado: ${money(item.price)} c/u\n   Subtotal parcial: ${money(item.price * item.quantity)}\n`
+        : '   Precio: por confirmar\n'
+      if (item.stock !== undefined && item.quantity > item.stock) {
+        message += `   Existencia actual: ${item.stock}; cantidad restante por confirmar\n`
+      }
+      message += '\n'
     })
 
-    message += `\n💰 *Subtotal:* ${money(total)}\n`
-    message += `📊 *IVA (12%):* ${money(impuestos)}\n`
-    message += `💵 *TOTAL:* ${money(totalConImpuestos)}\n\n`
+    message += confirmationRequired
+      ? `\n💰 *Subtotal provisional:* ${money(total)} (no es el total final)\n`
+      : `\n💰 *Subtotal:* ${money(total)}\n📊 *IVA (12%):* ${money(impuestos)}\n💵 *TOTAL:* ${money(totalConImpuestos)}\n\n`
     if (orderNotes) message += `📝 *Notas:* ${orderNotes}\n`
     return message
   }
@@ -201,7 +209,7 @@ export function CartPreview() {
       if (!response.ok) {
         throw new Error(data.error || 'No se pudo confirmar el pedido en la web')
       }
-      setOrderSuccess({ orderNumber: data.orderNumber })
+      setOrderSuccess({ orderNumber: data.orderNumber, needsConfirmation: data.needsConfirmation })
       clearCart()
       setShowCheckout(false)
     } catch (error) {
@@ -217,6 +225,7 @@ export function CartPreview() {
     setOrderLoading(true)
     setOrderError('')
     let orderNumber: string | undefined
+    let confirmationRequired = needsConfirmation
     try {
       const response = await fetch('/api/orders', {
         method: 'POST',
@@ -227,6 +236,7 @@ export function CartPreview() {
         throw new Error(data.error || 'No se pudo registrar el pedido')
       }
       orderNumber = data.orderNumber
+      confirmationRequired = Boolean(data.needsConfirmation)
     } catch (error) {
       setOrderError(error instanceof Error ? error.message : 'No se pudo registrar el pedido')
       setOrderLoading(false)
@@ -234,7 +244,7 @@ export function CartPreview() {
     }
 
     window.open(
-      `https://wa.me/50256125894?text=${encodeURIComponent(buildWhatsAppMessage(orderNumber))}`,
+      `https://wa.me/50256125894?text=${encodeURIComponent(buildWhatsAppMessage(orderNumber, confirmationRequired))}`,
       '_blank',
     )
     clearCart()
@@ -344,7 +354,6 @@ export function CartPreview() {
                               </button>
                               <CartQuantityInput
                                 quantity={item.quantity}
-                                stock={item.stock}
                                 name={item.name}
                                 onCommit={(quantity) => updateQuantity(item.id, quantity)}
                               />
@@ -365,8 +374,11 @@ export function CartPreview() {
                               </button>
                             </div>
                             <div className="text-right">
-                              <p className="text-xs opacity-70">{money(item.price)} c/u</p>
-                              <p className="text-lg font-bold">{money(item.price * item.quantity)}</p>
+                              <p className="text-xs opacity-70">{item.price > 0 ? `${money(item.price)} c/u` : 'Precio por confirmar'}</p>
+                              <p className="text-lg font-bold">{item.price > 0 ? money(item.price * item.quantity) : 'Pendiente'}</p>
+                              {item.stock !== undefined && item.quantity > item.stock ? (
+                                <p className="text-xs text-orange-700">Existencia por confirmar</p>
+                              ) : null}
                             </div>
                           </div>
                         </div>
@@ -378,7 +390,7 @@ export function CartPreview() {
                     <div className="rounded-xl border-2 border-zinc-300 bg-zinc-50 p-3 text-zinc-900 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-50">
                       <p className="text-sm opacity-70">Resumen</p>
                       <p className="mt-1 text-base font-semibold">
-                        {count} piezas · {money(totalConImpuestos)}
+                        {count} piezas · {needsConfirmation ? 'Total por confirmar' : money(totalConImpuestos)}
                       </p>
                       <ul className="mt-2 space-y-1 text-sm">
                         {cartItems.map((item) => (
@@ -387,11 +399,16 @@ export function CartPreview() {
                               {item.quantity}× {item.name}
                             </span>
                             <span className="shrink-0 font-medium">
-                              {money(item.price * item.quantity)}
+                              {item.price > 0 ? money(item.price * item.quantity) : 'Pendiente'}
                             </span>
                           </li>
                         ))}
                       </ul>
+                      {needsConfirmation ? (
+                        <p className="mt-3 text-xs text-orange-800">
+                          Te contactaremos para confirmar el precio final y las existencias antes de preparar el pedido.
+                        </p>
+                      ) : null}
                     </div>
 
                     <div className="space-y-2">
@@ -517,7 +534,7 @@ export function CartPreview() {
                   <div className="space-y-1 text-sm text-foreground">
                     <div className="flex justify-between text-muted-foreground">
                       <span>Subtotal</span>
-                      <span>{money(total)}</span>
+                      <span>{needsConfirmation ? `${money(total)} parcial` : money(total)}</span>
                     </div>
                     <div className="flex justify-between text-muted-foreground">
                       <span>IVA (12%)</span>
@@ -525,7 +542,7 @@ export function CartPreview() {
                     </div>
                     <div className="flex justify-between text-base font-bold">
                       <span>Total</span>
-                      <span>{money(totalConImpuestos)}</span>
+                      <span>{needsConfirmation ? 'Por confirmar' : money(totalConImpuestos)}</span>
                     </div>
                   </div>
                   <button
@@ -553,7 +570,7 @@ export function CartPreview() {
                     className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary text-sm font-semibold text-primary-foreground disabled:opacity-50 touch-manipulation select-none"
                   >
                     <ShoppingCart className="size-4" />
-                    {orderLoading ? 'Confirmando...' : 'Confirmar pedido (pago contra entrega)'}
+                    {orderLoading ? 'Enviando...' : needsConfirmation ? 'Enviar pedido para confirmar' : 'Confirmar pedido (pago contra entrega)'}
                   </button>
                   <button
                     type="button"
@@ -608,10 +625,14 @@ export function CartPreview() {
               <div className="mx-auto flex size-14 items-center justify-center rounded-full bg-primary/10">
                 <CheckCircle2 className="size-7 text-primary" />
               </div>
-              <h3 className="mt-4 text-xl font-semibold text-foreground">¡Compra confirmada!</h3>
+              <h3 className="mt-4 text-xl font-semibold text-foreground">
+                {orderSuccess.needsConfirmation ? '¡Pedido recibido!' : '¡Compra confirmada!'}
+              </h3>
               <p className="mt-2 text-sm text-muted-foreground">
-                Tu pedido{orderSuccess.orderNumber ? ` ${orderSuccess.orderNumber}` : ''} quedó
-                registrado.
+                Tu pedido{orderSuccess.orderNumber ? ` ${orderSuccess.orderNumber}` : ''} quedó registrado.
+                {orderSuccess.needsConfirmation
+                  ? ' Te contactaremos para confirmar el precio y la disponibilidad antes de preparar tu pedido.'
+                  : ''}
               </p>
               <button
                 type="button"

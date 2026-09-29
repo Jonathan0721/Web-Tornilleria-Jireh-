@@ -94,9 +94,12 @@ export async function createOrder(formData: FormData) {
     sku: string
     nombre: string
     cantidad: number
+    cantidadReservada: number
     precioUnitario: number
     total: number
   }> = []
+  let needsConfirmation = false
+  const confirmationItems = new Map<string, string>()
 
   for (const item of items) {
     const sku = String(item.sku || item.id || '')
@@ -109,14 +112,23 @@ export async function createOrder(formData: FormData) {
       .limit(1)
 
     const quantity = Number(item.quantity)
-    if (!Number.isInteger(quantity) || quantity <= 0) throw new Error(`Cantidad inválida para ${sku}`)
+    if (!Number.isInteger(quantity) || quantity <= 0 || quantity > 1_000_000) {
+      throw new Error(`Cantidad inválida para ${sku}`)
+    }
     if (!product || !product.activo) throw new Error(`El producto ${sku} ya no está disponible`)
-    if (product.stock < quantity) throw new Error(`Solo hay ${product.stock} unidades disponibles para ${sku}`)
+    if (product.stock < quantity || Number(product.precio) <= 0) {
+      const reason = [
+        Number(product.precio) <= 0 ? 'precio pendiente' : '',
+        product.stock < quantity ? `solicita ${quantity}, existencias consultadas ${product.stock}` : '',
+      ].filter(Boolean).join('; ')
+      confirmationItems.set(sku, `${sku} (${reason})`)
+      needsConfirmation = true
+    }
 
     const unitPrice = Number(product.precio)
     const nombre = product.nombre
 
-    if (!Number.isFinite(unitPrice) || unitPrice <= 0) {
+    if (!Number.isFinite(unitPrice) || unitPrice < 0) {
       throw new Error(`Precio inválido para ${sku}`)
     }
 
@@ -129,6 +141,7 @@ export async function createOrder(formData: FormData) {
       sku,
       nombre,
       cantidad: quantity,
+      cantidadReservada: 0,
       precioUnitario: unitPrice,
       total: itemTotal,
     })
@@ -154,8 +167,25 @@ export async function createOrder(formData: FormData) {
           sql`${inventario.stock} >= ${item.cantidad}`,
         ))
         .returning({ id: inventario.id })
-      if (!reserved) throw new Error(`No hay existencias suficientes para ${item.sku}; actualiza el carrito`)
+      if (reserved) {
+        item.cantidadReservada = item.cantidad
+      } else {
+        const [currentProduct] = await tx.select({ activo: inventario.activo, stock: inventario.stock })
+          .from(inventario)
+          .where(eq(inventario.id, item.inventarioId))
+          .limit(1)
+        if (!currentProduct?.activo) throw new Error(`El producto ${item.sku} ya no está disponible`)
+        confirmationItems.set(item.sku, `${item.sku} (solicita ${item.cantidad}, existencias actuales ${currentProduct.stock})`)
+        needsConfirmation = true
+      }
     }
+
+    const orderNotes = [
+      notes,
+      confirmationItems.size
+        ? `PENDIENTE DE CONFIRMAR PRECIO/DISPONIBILIDAD: ${[...confirmationItems.values()].join(', ')}`
+        : '',
+    ].filter(Boolean).join('\n')
 
     await tx.insert(pedidos).values({
       id: orderId,
@@ -165,7 +195,7 @@ export async function createOrder(formData: FormData) {
       subtotal: subtotal.toFixed(2),
       impuestos: impuestos.toFixed(2),
       total: total.toFixed(2),
-      notas: notes
+      notas: orderNotes || null
     })
     await tx.insert(pedidoHistorial).values({
       id: randomUUID(),
@@ -201,7 +231,8 @@ export async function createOrder(formData: FormData) {
           name: item.nombre,
           quantity: item.cantidad,
           price: item.precioUnitario
-        }))
+        })),
+        needsConfirmation
       )
     }
 
@@ -210,14 +241,15 @@ export async function createOrder(formData: FormData) {
       orderNumber,
       clientName,
       clientEmail,
-      total
+      total,
+      needsConfirmation
     )
   } catch (emailError) {
     console.error('Error enviando emails:', emailError)
     // No fallar el pedido si los emails fallan
   }
 
-  return { success: true, orderId, orderNumber }
+  return { success: true, orderId, orderNumber, needsConfirmation }
 }
 
 export async function updateOrderStatus(orderId: string, status: string) {
@@ -412,14 +444,18 @@ export async function deleteCancelledOrder(orderId: string) {
     if (order.estado !== 'cancelado') throw new Error('Solo se pueden borrar pedidos cancelados')
 
     const items = await tx
-      .select({ inventarioId: pedidoItems.inventarioId, cantidad: pedidoItems.cantidad })
+      .select({
+        inventarioId: pedidoItems.inventarioId,
+        cantidadReservada: pedidoItems.cantidadReservada,
+      })
       .from(pedidoItems)
       .where(eq(pedidoItems.pedidoId, orderId))
 
     for (const item of items) {
       if (!item.inventarioId) continue
+      if (item.cantidadReservada === 0) continue
       await tx.update(inventario)
-        .set({ stock: sql`${inventario.stock} + ${item.cantidad}` })
+        .set({ stock: sql`${inventario.stock} + ${item.cantidadReservada}` })
         .where(eq(inventario.id, item.inventarioId))
     }
 

@@ -56,7 +56,7 @@ type InventoryItem = {
   showImage: boolean
 }
 type DashboardStats = { sales: { value: number; change: string }; orders: { value: number; change: string }; products: { value: number; change: string }; clients: { value: number; change: string } }
-type RecentOrder = { id: string; number?: string; client: string; date: string; amount: string; status: string; phone?: string; email?: string }
+type RecentOrder = { id: string; number?: string; client: string; date: string; amount: string; status: string; needsConfirmation?: boolean; phone?: string; email?: string }
 type OrderDetail = NonNullable<Awaited<ReturnType<typeof GetOrderById>>>
 type Client = { id: string; name: string; email: string; phone: string; nit: string; company: string; createdAt: string }
 type LowStockProduct = { name: string; sku: string; stock: number; price: string }
@@ -102,6 +102,7 @@ export function TornilleriaDashboard({
   const [selectedOrder, setSelectedOrder] = useState<OrderDetail | null>(null)
   const [detailLoading, setDetailLoading] = useState(false)
   const [detailError, setDetailError] = useState('')
+  const selectedOrderNeedsConfirmation = selectedOrder?.notas?.includes('PENDIENTE DE CONFIRMAR PRECIO/DISPONIBILIDAD:') || false
 
   const whatsappPhone = (phone: string) => {
     const digits = phone.replace(/\D/g, '').replace(/^0/, '')
@@ -306,6 +307,7 @@ export function TornilleriaDashboard({
                           <td className="whitespace-nowrap px-6 py-4 font-medium">
                             {order.number || order.id}
                             <span className="block text-xs font-normal text-muted-foreground">{order.date}</span>
+                            {order.needsConfirmation && <span className="mt-1 block text-xs font-medium text-orange-700">Confirmar precio / existencia</span>}
                           </td>
                           <td className="whitespace-nowrap px-6 py-4 text-muted-foreground">{order.client}</td>
                           <td className="whitespace-nowrap px-6 py-4 font-medium">{order.amount}</td>
@@ -777,9 +779,10 @@ export function TornilleriaDashboard({
                 <p className="mt-2 text-sm">Estado: {orderStatusLabels[selectedOrder.estado] || selectedOrder.estado}</p>
                 {selectedOrder.notas ? <p className="mt-2 whitespace-pre-wrap text-sm">Notas: {selectedOrder.notas}</p> : null}
                 <div className="mt-4 space-y-1 border-t border-border pt-3 text-sm">
-                  <p className="flex justify-between"><span>Subtotal</span><span>Q {selectedOrder.subtotal.toFixed(2)}</span></p>
+                  {selectedOrderNeedsConfirmation && <p className="mb-2 text-xs font-medium text-orange-700">Precio y/o disponibilidad por confirmar. Los importes son provisionales.</p>}
+                  <p className="flex justify-between"><span>{selectedOrderNeedsConfirmation ? 'Subtotal provisional' : 'Subtotal'}</span><span>Q {selectedOrder.subtotal.toFixed(2)}</span></p>
                   <p className="flex justify-between"><span>IVA</span><span>Q {selectedOrder.impuestos.toFixed(2)}</span></p>
-                  <p className="flex justify-between font-semibold"><span>Total</span><span>Q {selectedOrder.total.toFixed(2)}</span></p>
+                  <p className="flex justify-between font-semibold"><span>{selectedOrderNeedsConfirmation ? 'Total provisional' : 'Total'}</span><span>Q {selectedOrder.total.toFixed(2)}</span></p>
                 </div>
               </div>
             </div>
@@ -800,9 +803,14 @@ export function TornilleriaDashboard({
                     <tr key={item.id} className="border-t border-border">
                       <td className="px-4 py-3">{item.nombre}</td>
                       <td className="px-4 py-3 text-muted-foreground">{item.sku}</td>
-                      <td className="px-4 py-3 text-right">{item.cantidad}</td>
-                      <td className="px-4 py-3 text-right">Q {item.precioUnitario.toFixed(2)}</td>
-                      <td className="px-4 py-3 text-right">Q {item.total.toFixed(2)}</td>
+                      <td className="px-4 py-3 text-right">
+                        {item.cantidad}
+                        {item.cantidadReservada < item.cantidad
+                          ? <span className="block text-xs text-orange-700">{item.cantidadReservada} reservadas; existencia por confirmar</span>
+                          : null}
+                      </td>
+                      <td className="px-4 py-3 text-right">{item.precioUnitario > 0 ? `Q ${item.precioUnitario.toFixed(2)}` : 'Por confirmar'}</td>
+                      <td className="px-4 py-3 text-right">{item.precioUnitario > 0 ? `Q ${item.total.toFixed(2)}` : 'Por confirmar'}</td>
                     </tr>
                   ))}
                 </tbody>
