@@ -2,12 +2,12 @@
 
 import { useState, useTransition } from 'react'
 import { signOut } from '@/lib/auth-client'
-import { createProduct, updateProduct, setProductActive } from '@/app/actions/inventory'
+import { createProduct, updateProduct, setProductActive, deleteProduct } from '@/app/actions/inventory'
 import { deleteCancelledOrder } from '@/app/actions/orders'
 import { ProductImageField } from '@/components/product-image-field'
 import type { getOrderById as GetOrderById, updateOrderStatus as UpdateOrderStatus } from '@/app/actions/orders'
 import { 
-  House, ClipboardList, PackageSearch, Box, Users, Settings, 
+  House, ClipboardList, PackageSearch, Box, Users, Settings, Trash2,
   Search, Bell, X, Menu, ArrowUpRight, ChevronDown, Plus, Truck,
   CircleDollarSign, ShoppingCart, SlidersHorizontal, ShieldCheck
 } from 'lucide-react'
@@ -544,6 +544,26 @@ export function TornilleriaDashboard({
                               }
                             }) }} className="text-muted-foreground hover:underline text-xs px-2 py-1.5 min-h-[44px] cursor-pointer">
                               {item.active ? 'Desactivar' : 'Reactivar'}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (!confirm(`¿Eliminar definitivamente "${item.name}" (${item.sku})? Esta acción no se puede deshacer. Los pedidos anteriores conservarán su detalle.`)) return
+                                startTransition(async () => {
+                                  try {
+                                    await deleteProduct(item.id)
+                                    if (selectedInventory?.id === item.id) setSelectedInventory(null)
+                                    window.location.reload()
+                                  } catch (error) {
+                                    setInventoryError(error instanceof Error ? error.message : 'No se pudo eliminar el producto')
+                                  }
+                                })
+                              }}
+                              disabled={isPending}
+                              className="inline-flex min-h-[44px] items-center gap-1 px-2 py-1.5 text-xs text-destructive hover:underline disabled:opacity-50"
+                            >
+                              <Trash2 className="size-3.5" />
+                              Eliminar
                             </button>
                           </td>
                         </tr>

@@ -118,7 +118,16 @@ export async function updateProduct(id: string, formData: FormData) {
 }
 
 export async function deleteProduct(id: string) {
-  await setProductActive(id, false)
+  await requireAdmin()
+  const [deleted] = await db.delete(inventario)
+    .where(eq(inventario.id, id))
+    .returning({ id: inventario.id, sku: inventario.sku })
+
+  if (!deleted) throw new Error('Producto no encontrado')
+  revalidatePath('/admin')
+  revalidatePath('/admin/inventario')
+  revalidatePath('/catalogo')
+  revalidatePath(`/producto/${deleted.sku}`)
 }
 
 export async function setProductActive(id: string, active: boolean) {
