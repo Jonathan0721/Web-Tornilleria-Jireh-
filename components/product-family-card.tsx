@@ -20,6 +20,7 @@ export function ProductFamilyCard({
   const [quantity, setQuantity] = useState(1)
   const { addToCart } = useCart()
   const selected = variants.find((variant) => variant.id === selectedId) || variants[0]
+  const familyImage = selected.imagen || variants.find((variant) => variant.imagen)?.imagen
   const dimensionOptions = useMemo(() => variants.map((variant) => ({
     variant,
     dimensions: getProductDimensions(variant.medidas),
@@ -58,8 +59,8 @@ export function ProductFamilyCard({
     <article className="rounded-xl border border-border bg-card p-4 sm:p-5">
       {selected.mostrarImagen !== false && (
         <div className="flex aspect-[1.6] items-center justify-center overflow-hidden rounded-lg bg-muted sm:aspect-[1.5]">
-          {selected.imagen ? (
-            <img src={selected.imagen} alt={selected.name} className="h-full w-full object-contain" />
+          {familyImage ? (
+            <img src={familyImage} alt={family} className="h-full w-full object-contain" />
           ) : (
             <div className="h-3 w-28 rotate-[-18deg] rounded-full bg-primary/80 shadow-[0_6px_0_#9ca3af] sm:w-32" />
           )}

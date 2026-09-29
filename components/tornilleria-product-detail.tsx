@@ -22,6 +22,7 @@ export default function TornilleriaProductDetail({
   const [selectedSku, setSelectedSku] = useState(product.sku)
   const [quantity, setQuantity] = useState(1)
   const selectedProduct = variants.find((variant) => variant.sku === selectedSku) || product
+  const familyImage = selectedProduct.imagen || variants.find((variant) => variant.imagen)?.imagen
   const dimensionOptions = useMemo(() => variants.map((variant) => ({
     variant,
     dimensions: getProductDimensions(variant.medidas),
@@ -77,10 +78,10 @@ export default function TornilleriaProductDetail({
         <div className="grid gap-6 lg:gap-8 lg:grid-cols-2">
           {/* Imagen del producto */}
           {selectedProduct.mostrarImagen && <div className="aspect-square rounded-2xl border border-border bg-muted flex items-center justify-center overflow-hidden">
-            {selectedProduct.imagen ? (
+            {familyImage ? (
               <img 
-                src={selectedProduct.imagen}
-                alt={selectedProduct.nombre}
+                src={familyImage}
+                alt={selectedProduct.familia || selectedProduct.nombre}
                 className="h-full w-full object-contain"
               />
             ) : (
