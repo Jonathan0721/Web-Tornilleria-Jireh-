@@ -77,7 +77,7 @@ export default function TornilleriaProductDetail({
         
         <div className="grid gap-6 lg:gap-8 lg:grid-cols-2">
           {/* Imagen del producto */}
-          {selectedProduct.mostrarImagen && <div className="aspect-square rounded-2xl border border-border bg-muted flex items-center justify-center overflow-hidden">
+          {selectedProduct.mostrarImagen && <div className="aspect-square rounded-2xl border border-border bg-white p-5 sm:p-8 flex items-center justify-center overflow-hidden">
             {familyImage ? (
               <img 
                 src={familyImage}

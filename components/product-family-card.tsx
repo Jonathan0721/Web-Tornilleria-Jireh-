@@ -58,7 +58,7 @@ export function ProductFamilyCard({
   return (
     <article className="rounded-xl border border-border bg-card p-4 sm:p-5">
       {selected.mostrarImagen !== false && (
-        <div className="flex aspect-[1.6] items-center justify-center overflow-hidden rounded-lg bg-muted sm:aspect-[1.5]">
+        <div className="flex aspect-square items-center justify-center overflow-hidden rounded-lg bg-white p-5 sm:p-7">
           {familyImage ? (
             <img src={familyImage} alt={family} className="h-full w-full object-contain" />
           ) : (
