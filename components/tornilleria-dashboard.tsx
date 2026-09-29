@@ -169,7 +169,15 @@ export function TornilleriaDashboard({
             <>
               <div className="mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
                 <div>
-                  <p className="mb-2 text-sm text-muted-foreground">Martes, 2 de septiembre de 2026</p>
+                  <p className="mb-2 text-sm text-muted-foreground">
+                    {new Intl.DateTimeFormat('es-GT', {
+                      weekday: 'long',
+                      day: 'numeric',
+                      month: 'long',
+                      year: 'numeric',
+                      timeZone: 'America/Guatemala',
+                    }).format(new Date()).replace(/^./, (letter) => letter.toLocaleUpperCase('es-GT'))}
+                  </p>
                   <h1 className="text-3xl font-semibold tracking-tight">Buenos días, {userName}</h1>
                   <p className="mt-1 text-muted-foreground">Esto es lo que está pasando en tu negocio hoy.</p>
                 </div>
