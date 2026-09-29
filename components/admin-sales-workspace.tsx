@@ -22,13 +22,18 @@ type DocumentRow = Awaited<ReturnType<typeof listSalesDocuments>>[number]
 type CartLine = { product: Product; quantity: number; unitPrice: number }
 type CustomerFields = SalesQuoteInput['customer']
 
-const currency = (value: number) => new Intl.NumberFormat('es-GT', {
-  style: 'currency',
-  currency: 'GTQ',
-}).format(value)
+function currency(value: number) {
+  const [integer, decimals] = value.toFixed(2).split('.')
+  const groupedInteger = integer.replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+  return `Q ${groupedInteger}.${decimals}`
+}
 
 function dateLabel(value: string) {
-  return new Date(value).toLocaleDateString('es-GT')
+  const guatemalaTime = new Date(new Date(value).getTime() - 6 * 60 * 60 * 1000)
+  const day = String(guatemalaTime.getUTCDate()).padStart(2, '0')
+  const month = String(guatemalaTime.getUTCMonth() + 1).padStart(2, '0')
+  const year = guatemalaTime.getUTCFullYear()
+  return `${day}/${month}/${year}`
 }
 
 function whatsappLink(phone: string, document: Document) {
