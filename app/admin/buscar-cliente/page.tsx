@@ -1,6 +1,8 @@
 import { NitLookupPanel } from '@/components/nit-lookup-panel'
+import { requireAdminPage } from '@/lib/admin-auth'
 
-export default function BuscarClientePage() {
+export default async function BuscarClientePage() {
+  await requireAdminPage()
   return (
     <main className="min-h-screen bg-background px-4 py-10 text-foreground sm:px-8">
       <div className="mx-auto max-w-2xl">

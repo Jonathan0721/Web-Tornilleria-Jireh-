@@ -1,20 +1,12 @@
-import { headers } from 'next/headers'
-import { redirect } from 'next/navigation'
-import { auth } from '@/lib/auth'
+import { requireAdminPage } from '@/lib/admin-auth'
 import { getOrders } from '@/app/actions/orders'
 import TornilleriaDashboard from '@/components/tornilleria-dashboard'
 import { db } from '@/lib/db'
 import { inventario, clientes } from '@/lib/db/schema'
-import { sql, lt } from 'drizzle-orm'
+import { sql } from 'drizzle-orm'
 
 export default async function AdminPage() {
-  const session = await auth.api.getSession({
-    headers: await headers()
-  })
-
-  if (!session) {
-    redirect('/sign-in')
-  }
+  const session = await requireAdminPage()
 
   // Obtener datos reales de la base de datos
   const inventoryRows = await db.select().from(inventario).orderBy(inventario.nombre)

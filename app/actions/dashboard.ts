@@ -1,15 +1,9 @@
 'use server'
 
-import { auth } from '@/lib/auth'
+import { requireAdmin } from '@/lib/admin-auth'
 import { db } from '@/lib/db'
 import { inventario, pedidos, pedidoItems, clientes } from '@/lib/db/schema'
 import { eq, desc, count, sql, gte, lte, and } from 'drizzle-orm'
-import { headers } from 'next/headers'
-
-async function requireAdmin() {
-  const session = await auth.api.getSession({ headers: await headers() })
-  if (!session?.user) throw new Error('No autorizado')
-}
 
 export async function getDashboardStats() {
   await requireAdmin()

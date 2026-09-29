@@ -1,20 +1,12 @@
 'use server'
 
-import { auth } from '@/lib/auth'
+import { requireAdmin, getAdminSession } from '@/lib/admin-auth'
 import { db } from '@/lib/db'
 import { pedidos, pedidoItems, pedidoHistorial, clientes, inventario } from '@/lib/db/schema'
 import { eq, and, sql, desc } from 'drizzle-orm'
-import { headers } from 'next/headers'
 import { revalidatePath } from 'next/cache'
 import { randomUUID } from 'crypto'
 import { sendOrderConfirmationEmail, sendNewOrderNotificationToAdmin } from '@/lib/email'
-
-async function requireAdmin() {
-  const session = await auth.api.getSession({ headers: await headers() })
-  if (!session?.user) throw new Error('No autorizado')
-  if (!session.user.email) throw new Error('Email de usuario no válido')
-  return session.user.email
-}
 
 function validateEmail(email: string): boolean {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -394,6 +386,42 @@ export async function getClients() {
   return db.select().from(clientes).orderBy(desc(clientes.createdAt))
 }
 
+export async function deleteCancelledOrder(orderId: string) {
+  await requireAdmin()
+
+  await db.transaction(async (tx) => {
+    const [order] = await tx
+      .select({ id: pedidos.id, numero: pedidos.numero, estado: pedidos.estado })
+      .from(pedidos)
+      .where(eq(pedidos.id, orderId))
+      .limit(1)
+
+    if (!order) throw new Error('Pedido no encontrado')
+    if (order.estado !== 'cancelado') throw new Error('Solo se pueden borrar pedidos cancelados')
+
+    const items = await tx
+      .select({ inventarioId: pedidoItems.inventarioId, cantidad: pedidoItems.cantidad })
+      .from(pedidoItems)
+      .where(eq(pedidoItems.pedidoId, orderId))
+
+    for (const item of items) {
+      if (!item.inventarioId) continue
+      await tx.update(inventario)
+        .set({ stock: sql`${inventario.stock} + ${item.cantidad}` })
+        .where(eq(inventario.id, item.inventarioId))
+    }
+
+    await tx.delete(pedidoItems).where(eq(pedidoItems.pedidoId, orderId))
+    await tx.delete(pedidoHistorial).where(eq(pedidoHistorial.pedidoId, orderId))
+    await tx.delete(pedidos).where(eq(pedidos.id, orderId))
+  })
+
+  revalidatePath('/admin')
+  revalidatePath('/admin/pedidos')
+  revalidatePath('/admin/inventario')
+  return { success: true }
+}
+
 const orderStatusLabels: Record<string, string> = {
   pendiente: 'Pendiente',
   confirmado: 'Confirmado',
@@ -404,7 +432,7 @@ const orderStatusLabels: Record<string, string> = {
 }
 
 export async function getClientByEmail(email: string) {
-  const session = await auth.api.getSession({ headers: await headers() })
+  const session = await getAdminSession()
   if (!session?.user) throw new Error('No autorizado')
 
   const client = await db

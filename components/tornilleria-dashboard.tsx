@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react'
 import { signOut } from '@/lib/auth-client'
 import { createProduct, updateProduct, setProductActive } from '@/app/actions/inventory'
+import { deleteCancelledOrder } from '@/app/actions/orders'
 import { ProductImageField } from '@/components/product-image-field'
 import type { getOrderById as GetOrderById, updateOrderStatus as UpdateOrderStatus } from '@/app/actions/orders'
 import { 
@@ -94,6 +95,7 @@ export function TornilleriaDashboard({
   const [inventoryError, setInventoryError] = useState('')
   const [orderStatuses, setOrderStatuses] = useState<Record<string, string>>({})
   const [orderNotices, setOrderNotices] = useState<Record<string, string>>({})
+  const [deletedOrders, setDeletedOrders] = useState<Set<string>>(() => new Set())
   const [orderSearch, setOrderSearch] = useState('')
   const [orderStatusFilter, setOrderStatusFilter] = useState('todos')
   const [selectedOrder, setSelectedOrder] = useState<OrderDetail | null>(null)
@@ -106,6 +108,7 @@ export function TornilleriaDashboard({
   }
 
   const filteredOrders = recentOrders.filter((order) => {
+    if (deletedOrders.has(order.id)) return false
     const term = orderSearch.trim().toLowerCase()
     const matchesSearch = !term || [order.number, order.client, order.phone, order.email]
       .some((value) => value?.toLowerCase().includes(term))
@@ -281,7 +284,7 @@ export function TornilleriaDashboard({
                         <th className="px-6 py-3 font-medium">Cliente</th>
                         <th className="px-6 py-3 font-medium">Importe</th>
                         <th className="px-6 py-3 font-medium">Estado y contacto</th>
-                        <th className="px-6 py-3 font-medium">Detalle</th>
+                        <th className="px-6 py-3 font-medium">Acciones</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -347,6 +350,7 @@ export function TornilleriaDashboard({
                               {orderNotices[order.id] ? <p role="status" className="mt-2 text-xs text-muted-foreground">{orderNotices[order.id]}</p> : null}
                           </td>
                           <td className="whitespace-nowrap px-6 py-4">
+                            <div className="flex items-center gap-2">
                               <button
                                 type="button"
                                 onClick={() => void showOrderDetail(order.id)}
@@ -355,6 +359,30 @@ export function TornilleriaDashboard({
                               >
                                 {detailLoading ? 'Cargando...' : 'Ver detalle'}
                               </button>
+                              {currentStatus === 'cancelado' && (
+                                <button
+                                  type="button"
+                                  disabled={isPending}
+                                  onClick={() => {
+                                    if (!confirm(`¿Eliminar definitivamente el pedido ${order.number || order.id}? Se devolverán al inventario las cantidades de sus productos.`)) return
+                                    startTransition(async () => {
+                                      try {
+                                        await deleteCancelledOrder(order.id)
+                                        setDeletedOrders((current) => new Set(current).add(order.id))
+                                      } catch (error) {
+                                        setOrderNotices((current) => ({
+                                          ...current,
+                                          [order.id]: error instanceof Error ? error.message : 'No se pudo eliminar el pedido.',
+                                        }))
+                                      }
+                                    })
+                                  }}
+                                  className="min-h-10 rounded-lg border border-destructive/50 px-3 text-xs font-medium text-destructive hover:bg-destructive/10 disabled:opacity-50"
+                                >
+                                  Eliminar prueba
+                                </button>
+                              )}
+                            </div>
                           </td>
                         </tr>
                         )

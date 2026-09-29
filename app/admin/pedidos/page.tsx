@@ -1,14 +1,9 @@
-import { cookies } from 'next/headers'
-import { redirect } from 'next/navigation'
-import { auth } from '@/lib/auth'
+import { requireAdminPage } from '@/lib/admin-auth'
 import { getOrderById, getOrders, updateOrderStatus } from '@/app/actions/orders'
 import TornilleriaDashboard from '@/components/tornilleria-dashboard'
 
 export default async function PedidosPage() {
-  const session = await auth.api.getSession({
-    headers: new Headers({ cookie: (await cookies()).toString() }),
-  })
-  if (!session) redirect('/sign-in')
+  await requireAdminPage()
 
   const orders = await getOrders()
   const recentOrders = orders.map((order) => ({

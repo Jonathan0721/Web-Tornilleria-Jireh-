@@ -1,6 +1,6 @@
 import { randomUUID } from 'crypto'
 import { NextResponse } from 'next/server'
-import { auth } from '@/lib/auth'
+import { getAdminSession } from '@/lib/admin-auth'
 
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024
 const IMAGE_EXTENSIONS: Record<string, string> = {
@@ -10,9 +10,9 @@ const IMAGE_EXTENSIONS: Record<string, string> = {
 }
 
 export async function POST(request: Request) {
-  const session = await auth.api.getSession({ headers: request.headers })
-  if (!session?.user) {
-    return NextResponse.json({ error: 'Debes iniciar sesión para subir imágenes.' }, { status: 401 })
+  const session = await getAdminSession(request.headers)
+  if (!session) {
+    return NextResponse.json({ error: 'No autorizado para subir imágenes.' }, { status: 401 })
   }
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL

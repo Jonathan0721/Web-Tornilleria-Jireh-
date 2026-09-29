@@ -1,10 +1,9 @@
 'use server'
 
-import { auth } from '@/lib/auth'
+import { requireAdmin } from '@/lib/admin-auth'
 import { db } from '@/lib/db'
 import { clientes } from '@/lib/db/schema'
 import { asc, eq } from 'drizzle-orm'
-import { headers } from 'next/headers'
 import { revalidatePath } from 'next/cache'
 import { randomUUID } from 'crypto'
 
@@ -135,8 +134,7 @@ export async function getClientByNit(nitRaw: string) {
 }
 
 export async function listClientsForAdmin() {
-  const session = await auth.api.getSession({ headers: await headers() })
-  if (!session?.user) throw new Error('No autorizado')
+  await requireAdmin()
 
   const rows = await db.select().from(clientes).orderBy(asc(clientes.createdAt))
   return rows.map((c) => ({
