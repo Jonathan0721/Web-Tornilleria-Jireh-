@@ -48,7 +48,7 @@ export const metadata: Metadata = {
   },
   generator: 'v0.app',
   icons: {
-    icon: '/favicon.png',
+    icon: '/logo.jpg',
     apple: '/logo.jpg',
   },
 }
