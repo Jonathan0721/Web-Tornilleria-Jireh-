@@ -5,7 +5,6 @@ import {
   CheckCircle2,
   ChevronRight,
   Factory,
-  Instagram,
   MapPin,
   MessageCircle,
   Package,
@@ -289,7 +288,7 @@ export default function TornilleriaHome() {
                 rel="noopener noreferrer"
                 className="inline-flex min-h-[48px] items-center rounded-lg border border-input px-5 py-3 font-medium transition-colors hover:bg-background"
               >
-                <Instagram className="mr-2 size-4" />
+                <span className="mr-2 text-base leading-none" aria-hidden="true">@</span>
                 Instagram
               </a>
             </div>
@@ -331,7 +330,7 @@ export default function TornilleriaHome() {
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1 font-medium text-foreground transition-opacity hover:opacity-80"
             >
-              <Instagram className="size-4" />
+              <span className="text-base leading-none" aria-hidden="true">@</span>
               Instagram
             </a>
             <Link href="/privacidad" className="font-medium text-foreground transition-opacity hover:opacity-80">
