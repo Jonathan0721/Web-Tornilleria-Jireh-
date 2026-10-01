@@ -89,20 +89,20 @@ export default function TornilleriaHome() {
           <nav className="flex items-center gap-2 text-sm sm:gap-3">
             <Link
               href="/registro"
-              className="hidden min-h-[44px] items-center rounded-lg px-3 py-2 font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground sm:inline-flex"
+              className="inline-flex min-h-[44px] items-center rounded-lg px-3 py-2 font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
             >
               Registrarse
             </Link>
             <a
               href={whatsappHref}
-              className="inline-flex min-h-[44px] items-center rounded-lg border border-input px-3 py-2 font-medium transition-colors hover:bg-muted"
+              className="hidden min-h-[44px] items-center rounded-lg border border-input px-3 py-2 font-medium transition-colors hover:bg-muted sm:inline-flex"
             >
               <MessageCircle className="mr-1.5 size-4" />
               Contacto
             </a>
             <Link
               href="/catalogo"
-              className="inline-flex min-h-[44px] items-center rounded-lg bg-primary px-4 py-2 font-medium text-primary-foreground transition-opacity hover:opacity-90"
+              className="hidden min-h-[44px] items-center rounded-lg bg-primary px-4 py-2 font-medium text-primary-foreground transition-opacity hover:opacity-90 sm:inline-flex"
             >
               Catálogo
               <ArrowRight className="ml-1 size-4" />
