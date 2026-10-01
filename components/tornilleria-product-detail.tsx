@@ -68,7 +68,11 @@ export default function TornilleriaProductDetail({
       <header className="sticky top-0 z-20 border-b border-border bg-background/95 backdrop-blur">
         <div className="mx-auto flex h-20 max-w-7xl items-center justify-between gap-6 px-5 md:px-8">
           <Link href="/catalogo" className="flex shrink-0 items-center gap-3 px-2 py-2 min-h-[44px] hover:opacity-80 active:opacity-70 transition-opacity cursor-pointer">
-            <span className="flex size-10 items-center justify-center rounded-xl bg-primary font-mono font-bold text-primary-foreground pointer-events-none">TJ</span>
+            <img
+              src="/logo.jpg"
+              alt="TORNILLOS JEHOVA JIREH"
+              className="pointer-events-none size-10 rounded-xl object-cover"
+            />
             <span className="hidden sm:block font-semibold tracking-tight">TORNILLOS JEHOVA JIREH</span>
             <span className="sm:hidden font-semibold tracking-tight text-sm">TORNILLOS JEHOVA JIREH</span>
           </Link>
@@ -203,8 +207,8 @@ export default function TornilleriaProductDetail({
             
             {selectedProduct.mostrarStock && <div className="mb-8">
               <p className="text-sm font-medium mb-2">Disponibilidad: </p>
-              <p className={`text-sm ${selectedProduct.stock > 10 ? 'text-green-600' : 'text-orange-600'}`}>
-                {selectedProduct.stock > 10 ? `${selectedProduct.stock} unidades disponibles` : selectedProduct.stock > 0 ? `Hay ${selectedProduct.stock}; puedes solicitar más` : 'Disponible por encargo; existencia por confirmar'}
+              <p className={`text-sm ${selectedProduct.stock > 0 ? 'text-green-600' : 'text-orange-600'}`}>
+                {selectedProduct.stock > 0 ? 'Disponible' : 'No disponible'}
               </p>
             </div>}
             

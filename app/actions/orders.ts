@@ -119,7 +119,7 @@ export async function createOrder(formData: FormData) {
     if (product.stock < quantity || Number(product.precio) <= 0) {
       const reason = [
         Number(product.precio) <= 0 ? 'precio pendiente' : '',
-        product.stock < quantity ? `solicita ${quantity}, existencias consultadas ${product.stock}` : '',
+        product.stock < quantity ? `solicita ${quantity}, disponibilidad por confirmar` : '',
       ].filter(Boolean).join('; ')
       confirmationItems.set(sku, `${sku} (${reason})`)
       needsConfirmation = true
@@ -175,7 +175,7 @@ export async function createOrder(formData: FormData) {
           .where(eq(inventario.id, item.inventarioId))
           .limit(1)
         if (!currentProduct?.activo) throw new Error(`El producto ${item.sku} ya no está disponible`)
-        confirmationItems.set(item.sku, `${item.sku} (solicita ${item.cantidad}, existencias actuales ${currentProduct.stock})`)
+        confirmationItems.set(item.sku, `${item.sku} (solicita ${item.cantidad}, disponibilidad por confirmar)`)
         needsConfirmation = true
       }
     }

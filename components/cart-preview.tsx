@@ -183,7 +183,7 @@ export function CartPreview() {
         ? `   Precio registrado: ${money(item.price)} c/u\n   Subtotal parcial: ${money(item.price * item.quantity)}\n`
         : '   Precio: por confirmar\n'
       if (item.stock !== undefined && item.quantity > item.stock) {
-        message += `   Existencia actual: ${item.stock}; cantidad restante por confirmar\n`
+        message += '   Disponibilidad: cantidad adicional por confirmar\n'
       }
       message += '\n'
     })

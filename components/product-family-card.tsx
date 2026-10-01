@@ -62,13 +62,13 @@ export function ProductFamilyCard({
   return (
     <article className="rounded-xl border border-border bg-card p-4 sm:p-5">
       {selected.mostrarImagen !== false && (
-        <div className="flex aspect-square items-center justify-center overflow-hidden rounded-lg bg-white p-5 sm:p-7">
+        <Link href={`/producto/${selected.sku || selected.id}`} className="block flex aspect-square items-center justify-center overflow-hidden rounded-lg bg-white p-5 transition-opacity hover:opacity-80 sm:p-7" aria-label={`Ver ${family}`}>
           {familyImage ? (
             <img src={familyImage} alt={family} className="h-full w-full object-contain" />
           ) : (
             <div className="h-3 w-28 rotate-[-18deg] rounded-full bg-primary/80 shadow-[0_6px_0_#9ca3af] sm:w-32" />
           )}
-        </div>
+        </Link>
       )}
 
       <div className="mt-4">
@@ -79,7 +79,7 @@ export function ProductFamilyCard({
             {selected.mostrarSku !== false ? selected.sku || selected.id : ''}
           </p>
         )}
-        <h3 className="mt-1 text-base font-semibold leading-6">{family}</h3>
+        <Link href={`/producto/${selected.sku || selected.id}`} className="mt-1 block text-base font-semibold leading-6 hover:text-primary">{family}</Link>
         {selected.mostrarDescripcion !== false && selected.descripcion && (
           <p className="mt-2 line-clamp-2 text-xs text-muted-foreground">{selected.descripcion}</p>
         )}
@@ -134,8 +134,8 @@ export function ProductFamilyCard({
             </p>
           )}
           {selected.mostrarStock !== false && (
-            <p className={`mt-1 text-xs ${selected.stock > 10 ? 'text-green-600' : 'text-orange-600'}`}>
-              {selected.stock > 0 ? `${selected.stock} disponibles` : 'Disponible por encargo'}
+            <p className={`mt-1 text-xs ${selected.stock > 0 ? 'text-green-600' : 'text-orange-600'}`}>
+              {selected.stock > 0 ? 'Disponible' : 'No disponible'}
             </p>
           )}
         </div>
@@ -155,8 +155,8 @@ export function ProductFamilyCard({
       </div>
 
       <div className="mt-4 flex items-center justify-between gap-3">
-        <Link href={`/producto/${selected.sku || selected.id}`} className="text-sm font-medium text-primary hover:underline">
-          Ver detalles
+        <Link href={`/producto/${selected.sku || selected.id}`} className="inline-flex min-h-[44px] items-center rounded-lg border border-primary px-4 py-2 text-sm font-medium text-primary hover:bg-primary/5">
+          Ver producto y descripción
         </Link>
         <button
           type="button"
