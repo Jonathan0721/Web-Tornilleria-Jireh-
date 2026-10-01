@@ -5,6 +5,7 @@ import {
   CheckCircle2,
   ChevronRight,
   Factory,
+  Instagram,
   MapPin,
   MessageCircle,
   Package,
@@ -16,6 +17,7 @@ import Link from 'next/link'
 
 /** Pon aquí el número con código de país, sin + ni espacios. Ej: 50212345678 */
 const WHATSAPP_NUMBER = '50256125894'
+const INSTAGRAM_URL = 'https://www.instagram.com/tornillosjehovajireh/'
 
 const categories = [
   {
@@ -281,6 +283,15 @@ export default function TornilleriaHome() {
               >
                 Registrarme
               </Link>
+              <a
+                href={INSTAGRAM_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex min-h-[48px] items-center rounded-lg border border-input px-5 py-3 font-medium transition-colors hover:bg-background"
+              >
+                <Instagram className="mr-2 size-4" />
+                Instagram
+              </a>
             </div>
           </div>
           <div className="grid gap-4 self-start rounded-2xl border border-border bg-background p-6 text-sm leading-6">
@@ -313,6 +324,15 @@ export default function TornilleriaHome() {
             </Link>
             <a href={whatsappHref} className="font-medium text-foreground transition-opacity hover:opacity-80">
               Contacto
+            </a>
+            <a
+              href={INSTAGRAM_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 font-medium text-foreground transition-opacity hover:opacity-80"
+            >
+              <Instagram className="size-4" />
+              Instagram
             </a>
             <Link href="/privacidad" className="font-medium text-foreground transition-opacity hover:opacity-80">
               Privacidad
