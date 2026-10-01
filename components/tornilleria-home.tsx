@@ -77,9 +77,11 @@ export default function TornilleriaHome() {
             href="/"
             className="flex min-h-[44px] items-center gap-3 px-1 py-1 transition-opacity hover:opacity-80 active:opacity-70"
           >
-            <span className="flex size-11 items-center justify-center rounded-xl bg-primary font-mono text-lg font-bold text-primary-foreground">
-              TJ
-            </span>
+            <img
+              src="/logo.jpg"
+              alt="TORNILLOS JEHOVA JIREH"
+              className="size-11 rounded-xl object-cover"
+            />
             <span>
               <strong className="block tracking-tight">TORNILLOS JEHOVA JIREH</strong>
             </span>
@@ -312,6 +314,12 @@ export default function TornilleriaHome() {
             <a href={whatsappHref} className="font-medium text-foreground transition-opacity hover:opacity-80">
               Contacto
             </a>
+            <Link href="/privacidad" className="font-medium text-foreground transition-opacity hover:opacity-80">
+              Privacidad
+            </Link>
+            <Link href="/terminos" className="font-medium text-foreground transition-opacity hover:opacity-80">
+              Términos
+            </Link>
           </div>
         </div>
       </footer>

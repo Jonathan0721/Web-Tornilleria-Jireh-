@@ -1,12 +1,13 @@
-import { Analytics } from '@vercel/analytics/next'
 import type { Metadata, Viewport } from 'next'
 import './globals.css'
 import { CartProvider } from '@/lib/cart-context'
 import GoogleAnalytics from '@/components/google-analytics'
 import LiveChat from '@/components/live-chat'
+import ConsentBanner from '@/components/consent-banner'
+import AnalyticsConsent from '@/components/analytics-consent'
 
 export const metadata: Metadata = {
-  title: 'TORNILLOS JEHOVA JIREH | Suministros Industriales en Guatemala',
+  title: 'TORNILLOS JEHOVA JIREH | ',
   description: 'Venta de tornillos, tuercas, arandelas y suministros industriales en Guatemala. Catálogo online, precios competitivos, envíos nacionales y atención personalizada.',
   keywords: 'tornillos, tuercas, arandelas, suministros industriales, ferretería, Guatemala, construcción, fijaciones, hardware industrial',
   authors: [{ name: 'TORNILLOS JEHOVA JIREH' }],
@@ -47,21 +48,8 @@ export const metadata: Metadata = {
   },
   generator: 'v0.app',
   icons: {
-    icon: [
-      {
-        url: '/icon-light-32x32.png',
-        media: '(prefers-color-scheme: light)',
-      },
-      {
-        url: '/icon-dark-32x32.png',
-        media: '(prefers-color-scheme: dark)',
-      },
-      {
-        url: '/icon.svg',
-        type: 'image/svg+xml',
-      },
-    ],
-    apple: '/apple-icon.png',
+    icon: '/favicon.png',
+    apple: '/logo.jpg',
   },
 }
 
@@ -87,9 +75,10 @@ export default function RootLayout({
         <CartProvider>
           {children}
         </CartProvider>
-        {process.env.NODE_ENV === 'production' && <Analytics />}
         {process.env.NODE_ENV === 'production' && <GoogleAnalytics />}
+        {process.env.NODE_ENV === 'production' && <AnalyticsConsent />}
         <LiveChat />
+        <ConsentBanner />
       </body>
     </html>
   )
