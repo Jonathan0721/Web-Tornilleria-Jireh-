@@ -3,7 +3,7 @@
 import { requireAdmin } from '@/lib/admin-auth'
 import { db } from '@/lib/db'
 import { clientes } from '@/lib/db/schema'
-import { asc, eq } from 'drizzle-orm'
+import { asc, eq, or } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
 import { randomUUID } from 'crypto'
 
@@ -29,6 +29,8 @@ export type ClientInput = {
 }
 
 export async function upsertClient(input: ClientInput) {
+  await requireAdmin()
+
   const nombre = sanitizeString(input.nombre || '')
   const telefono = sanitizeString(input.telefono || '')
   const nit = input.nit ? normalizeNit(input.nit) : ''
@@ -109,7 +111,62 @@ export async function upsertClient(input: ClientInput) {
   return { success: true, id, created: true }
 }
 
+export async function registerClient(input: ClientInput) {
+  const nombre = sanitizeString(input.nombre || '')
+  const telefono = sanitizeString(input.telefono || '')
+  const nit = input.nit ? normalizeNit(input.nit) : ''
+  const empresa = sanitizeString(input.empresa || '')
+  const direccion = sanitizeString(input.direccion || '')
+  const emailRaw = sanitizeString(input.email || '')
+
+  if (!nombre || !telefono) {
+    throw new Error('Nombre y teléfono son obligatorios')
+  }
+  if (nombre.length > 120 || telefono.length > 30) {
+    throw new Error('Datos exceden longitud permitida')
+  }
+  if (nit && nit.length > 30) {
+    throw new Error('NIT inválido')
+  }
+
+  const phoneDigits = telefono.replace(/\D/g, '')
+  const email =
+    emailRaw && validateEmail(emailRaw)
+      ? emailRaw.toLowerCase()
+      : `cliente+${nit || phoneDigits || randomUUID().slice(0, 8)}@registro.local`
+
+  const existing = await db
+    .select({ id: clientes.id })
+    .from(clientes)
+    .where(
+      or(
+        nit ? eq(clientes.nit, nit) : undefined,
+        emailRaw && validateEmail(emailRaw) ? eq(clientes.email, email) : undefined,
+        eq(clientes.telefono, telefono),
+      ),
+    )
+    .limit(1)
+
+  if (existing.length) {
+    return { success: true, created: false }
+  }
+
+  await db.insert(clientes).values({
+    id: randomUUID(),
+    nombre,
+    email,
+    telefono,
+    nit: nit || null,
+    empresa: empresa || null,
+    direccion: direccion || null,
+  })
+
+  return { success: true, created: true }
+}
+
 export async function getClientByNit(nitRaw: string) {
+  await requireAdmin()
+
   const nit = normalizeNit(nitRaw)
   if (!nit) throw new Error('NIT requerido')
 

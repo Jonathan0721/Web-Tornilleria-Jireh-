@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
-import { getClientByNit, upsertClient } from '@/app/actions/clients'
+import { getClientByNit, registerClient } from '@/app/actions/clients'
+import { getAdminSession } from '@/lib/admin-auth'
 
 // Rate limiting simple en memoria
 const rateLimit = new Map<string, { count: number; resetTime: number }>()
@@ -25,6 +26,11 @@ function checkRateLimit(ip: string): boolean {
 
 export async function GET(request: Request) {
   try {
+    const session = await getAdminSession(request.headers)
+    if (!session) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+    }
+
     const ip = request.headers.get('x-forwarded-for') || 
                request.headers.get('x-real-ip') || 
                'unknown'
@@ -48,7 +54,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ client })
   } catch (error) {
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Error al buscar cliente' },
+      { error: 'Error al buscar cliente' },
       { status: 500 },
     )
   }
@@ -85,7 +91,7 @@ export async function POST(request: Request) {
     const empresa = body.empresa ? String(body.empresa).trim().slice(0, 100) : ''
     const direccion = body.direccion ? String(body.direccion).trim().slice(0, 255) : ''
     
-    const result = await upsertClient({
+    const result = await registerClient({
       nombre,
       telefono,
       nit,
@@ -96,7 +102,9 @@ export async function POST(request: Request) {
     return NextResponse.json(result)
   } catch (error) {
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Error al registrar cliente' },
+      { error: error instanceof Error && /obligatorios|exceden|inválido/.test(error.message)
+          ? error.message
+          : 'Error al registrar cliente' },
       { status: 400 },
     )
   }

@@ -209,9 +209,9 @@ DROP POLICY IF EXISTS "Pedidos escritura autenticada" ON public.pedidos;
 DROP POLICY IF EXISTS "Pedido items lectura autenticada" ON public.pedido_items;
 DROP POLICY IF EXISTS "Pedido items escritura autenticada" ON public.pedido_items;
 
--- Políticas para clientes (lectura pública, escritura solo autenticados)
-CREATE POLICY "Clientes lectura pública" ON public.clientes FOR SELECT USING (true);
-CREATE POLICY "Clientes escritura autenticada" ON public.clientes FOR ALL USING (auth.role() = 'authenticated');
+-- Clientes se gestionan exclusivamente desde el servidor de la aplicación.
+-- No exponer datos personales mediante la Data API de Supabase.
+REVOKE ALL ON TABLE public.clientes FROM anon, authenticated;
 
 -- Políticas para inventario (lectura pública, escritura solo autenticados)
 CREATE POLICY "Inventario lectura pública" ON public.inventario FOR SELECT USING (true);
@@ -224,6 +224,13 @@ CREATE POLICY "Pedidos escritura autenticada" ON public.pedidos FOR ALL USING (a
 -- Políticas para pedido_items (lectura/escritura solo autenticados)
 CREATE POLICY "Pedido items lectura autenticada" ON public.pedido_items FOR SELECT USING (auth.role() = 'authenticated');
 CREATE POLICY "Pedido items escritura autenticada" ON public.pedido_items FOR ALL USING (auth.role() = 'authenticated');
+
+-- Las tablas de Better Auth contienen sesiones, tokens y credenciales.
+ALTER TABLE public."user" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.session ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.account ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.verification ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON TABLE public."user", public.session, public.account, public.verification FROM anon, authenticated;
 
 -- ============================================
 -- COMPLETADO
