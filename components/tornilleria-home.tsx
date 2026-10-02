@@ -76,13 +76,8 @@ export default function TornilleriaHome() {
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-5 py-4 md:px-8">
           <Link
             href="/"
-            className="flex min-h-[44px] items-center gap-3 px-1 py-1 transition-opacity hover:opacity-80 active:opacity-70"
+            className="flex min-h-[44px] items-center px-1 py-1 transition-opacity hover:opacity-80 active:opacity-70"
           >
-            <img
-              src="/logo-tj.svg"
-              alt="TORNILLOS JEHOVA JIREH"
-              className="size-11 shrink-0 rounded-xl object-cover"
-            />
             <span className="min-w-0 max-w-[180px] leading-tight sm:max-w-none">
               <strong className="block text-[clamp(0.78rem,3.6vw,1rem)] tracking-tight">
                 <span className="block">TORNILLOS JEHOVA</span>
