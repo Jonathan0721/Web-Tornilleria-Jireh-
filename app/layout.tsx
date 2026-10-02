@@ -48,9 +48,9 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: '/logo-tj.svg', type: 'image/svg+xml' },
+      { url: '/logo-tj.jpg', type: 'image/jpeg' },
     ],
-    apple: '/logo-tj.svg',
+    apple: '/logo-tj.jpg',
   },
 }
 

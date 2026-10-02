@@ -45,7 +45,7 @@ export function TornilleriaStore({ initialProducts = [] }: { initialProducts?: C
         <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-3 sm:gap-6 sm:px-5 md:px-8">
           <a href="/" className="flex min-h-[44px] min-w-0 shrink items-center gap-2">
             <img
-              src="/logo-tj.svg"
+              src="/logo-tj.jpg"
               alt="TJ"
               className="size-8 shrink-0 rounded-lg object-cover"
             />

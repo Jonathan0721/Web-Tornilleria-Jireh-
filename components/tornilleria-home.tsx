@@ -79,7 +79,7 @@ export default function TornilleriaHome() {
             className="flex min-h-[44px] items-center gap-2 px-1 py-1 transition-opacity hover:opacity-80 active:opacity-70"
           >
             <img
-              src="/logo-tj.svg"
+              src="/logo-tj.jpg"
               alt="TJ"
               className="size-9 shrink-0 rounded-lg object-cover"
             />
