@@ -78,10 +78,9 @@ export default function TornilleriaHome() {
             href="/"
             className="flex min-h-[44px] items-center px-1 py-1 transition-opacity hover:opacity-80 active:opacity-70"
           >
-            <span className="min-w-0 max-w-[180px] leading-tight sm:max-w-none">
-              <strong className="block text-[clamp(0.78rem,3.6vw,1rem)] tracking-tight">
-                <span className="block">TORNILLOS JEHOVA</span>
-                <span className="block">JIREH</span>
+            <span className="min-w-0 whitespace-nowrap leading-tight">
+              <strong className="block text-[clamp(0.65rem,3.6vw,1rem)] tracking-tight">
+                TORNILLOS JEHOVA JIREH
               </strong>
             </span>
           </Link>
