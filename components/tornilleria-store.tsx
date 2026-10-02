@@ -43,7 +43,12 @@ export function TornilleriaStore({ initialProducts = [] }: { initialProducts?: C
     <div className="min-h-screen bg-background text-foreground">
       <header className="sticky top-0 z-20 border-b border-border bg-background/95 backdrop-blur pt-[env(safe-area-inset-top)]">
         <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-3 sm:gap-6 sm:px-5 md:px-8">
-          <a href="/" className="flex min-h-[44px] min-w-0 shrink items-center">
+          <a href="/" className="flex min-h-[44px] min-w-0 shrink items-center gap-2">
+            <img
+              src="/logo-tj.svg"
+              alt="TJ"
+              className="size-8 shrink-0 rounded-lg object-cover"
+            />
             <span className="min-w-0 whitespace-nowrap leading-tight">
               <strong className="block text-[clamp(0.65rem,3.5vw,1rem)] tracking-tight">
                 TORNILLOS JEHOVA JIREH
