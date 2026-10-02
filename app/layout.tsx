@@ -46,10 +46,11 @@ export const metadata: Metadata = {
   verification: {
     google: process.env.GOOGLE_SITE_VERIFICATION,
   },
-  generator: 'v0.app',
   icons: {
-    icon: '/logo.jpg',
-    apple: '/logo.jpg',
+    icon: [
+      { url: '/logo-tj.svg', type: 'image/svg+xml' },
+    ],
+    apple: '/logo-tj.svg',
   },
 }
 
